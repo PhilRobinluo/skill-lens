@@ -43,10 +43,10 @@ const FREQUENCY_OPTIONS: Array<{ value: string; label: string }> = [
 ];
 
 const SOURCE_LABELS: Record<string, string> = {
-  "self-built": "Self-built",
-  baoyu: "Baoyu",
-  "plugin-official": "Plugin (Official)",
-  "plugin-community": "Plugin (Community)",
+  "self-built": "自建",
+  baoyu: "宝玉系列",
+  "plugin-official": "官方插件",
+  "plugin-community": "社区插件",
 };
 
 function useDebounce<T extends (...args: unknown[]) => void>(

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillCard } from "@/components/skill-card";
 import { SkillDetailSheet } from "@/components/skill-detail-sheet";
@@ -17,18 +18,20 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { useAutoRefresh } from "@/hooks/use-sse";
 import type { SkillEntry } from "@/lib/types";
 
+type ViewMode = "list" | "grouped";
+
 const SOURCE_OPTIONS = [
-  { value: "all", label: "All Sources" },
-  { value: "self-built", label: "Self-built" },
-  { value: "baoyu", label: "Baoyu" },
-  { value: "plugin-official", label: "Official" },
-  { value: "plugin-community", label: "Community" },
+  { value: "all", label: "全部来源" },
+  { value: "self-built", label: "自建" },
+  { value: "baoyu", label: "宝玉系列" },
+  { value: "plugin-official", label: "官方插件" },
+  { value: "plugin-community", label: "社区插件" },
 ];
 
 const CLAUDE_STATUS_OPTIONS = [
-  { value: "all", label: "All Status" },
-  { value: "routed", label: "Routed" },
-  { value: "orphan", label: "Orphan" },
+  { value: "all", label: "全部状态" },
+  { value: "routed", label: "已路由" },
+  { value: "orphan", label: "孤立" },
 ];
 
 export default function SkillsPage() {
@@ -37,6 +40,56 @@ export default function SkillsPage() {
       <SkillsPageInner />
     </Suspense>
   );
+}
+
+const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> = {
+  "self-built": {
+    label: "自建",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+  },
+  baoyu: {
+    label: "宝玉系列",
+    className: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  },
+  "plugin-official": {
+    label: "官方插件",
+    className: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+  },
+  "plugin-community": {
+    label: "社区插件",
+    className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
+  },
+};
+
+interface SkillGroup {
+  domain: string;
+  skills: SkillEntry[];
+}
+
+function groupSkillsByDomain(skills: SkillEntry[]): SkillGroup[] {
+  const groupMap = new Map<string, SkillEntry[]>();
+
+  for (const skill of skills) {
+    const domain = skill.tags.domain[0] ?? "未分类";
+    if (!groupMap.has(domain)) {
+      groupMap.set(domain, []);
+    }
+    groupMap.get(domain)!.push(skill);
+  }
+
+  // Sort by count (largest first), "未分类" always at bottom
+  const groups = Array.from(groupMap.entries()).map(([domain, items]) => ({
+    domain,
+    skills: items,
+  }));
+
+  groups.sort((a, b) => {
+    if (a.domain === "未分类") return 1;
+    if (b.domain === "未分类") return -1;
+    return b.skills.length - a.skills.length;
+  });
+
+  return groups;
 }
 
 function SkillsPageInner() {
@@ -48,6 +101,7 @@ function SkillsPageInner() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Filters from URL
   const q = searchParams.get("q") ?? "";
@@ -117,22 +171,24 @@ function SkillsPageInner() {
     fetchSkills();
   }
 
+  const groups = useMemo(() => groupSkillsByDomain(skills), [skills]);
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Skills</h1>
+          <h1 className="text-2xl font-bold tracking-tight">技能库</h1>
           <p className="text-sm text-muted-foreground">
-            {loading ? "Loading..." : `${total} skill${total !== 1 ? "s" : ""} found`}
+            {loading ? "加载中..." : `共 ${total} 个技能`}
           </p>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters + View Toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
-          placeholder="Search by name or description..."
+          placeholder="搜索技能..."
           value={q}
           onChange={(e) => updateParam("q", e.target.value)}
           className="h-9 sm:max-w-xs"
@@ -169,6 +225,32 @@ function SkillsPageInner() {
             ))}
           </SelectContent>
         </Select>
+
+        {/* View mode toggle */}
+        <div className="ml-auto flex items-center rounded-md border">
+          <button
+            type="button"
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              viewMode === "list"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            } rounded-l-md`}
+            onClick={() => setViewMode("list")}
+          >
+            列表
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              viewMode === "grouped"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            } rounded-r-md`}
+            onClick={() => setViewMode("grouped")}
+          >
+            分组
+          </button>
+        </div>
       </div>
 
       {/* Error */}
@@ -184,27 +266,43 @@ function SkillsPageInner() {
               fetchSkills();
             }}
           >
-            Retry
+            重试
           </Button>
         </div>
       )}
 
-      {/* Grid */}
+      {/* Empty state */}
       {!loading && skills.length === 0 && !error && (
         <div className="flex h-40 items-center justify-center text-muted-foreground">
-          No skills match the current filters.
+          没有匹配当前筛选条件的技能
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {skills.map((skill) => (
-          <SkillCard
-            key={skill.name}
-            skill={skill}
-            onClick={() => handleCardClick(skill)}
-          />
-        ))}
-      </div>
+      {/* List View (card grid) */}
+      {viewMode === "list" && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {skills.map((skill, index) => (
+            <SkillCard
+              key={`${skill.name}-${skill.source}-${index}`}
+              skill={skill}
+              onClick={() => handleCardClick(skill)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Grouped View */}
+      {viewMode === "grouped" && (
+        <div className="space-y-2">
+          {groups.map((group) => (
+            <GroupSection
+              key={group.domain}
+              group={group}
+              onSkillClick={handleCardClick}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Detail Sheet */}
       <SkillDetailSheet
@@ -214,6 +312,69 @@ function SkillsPageInner() {
         onOpenChange={setSheetOpen}
         onUpdated={handleSheetUpdated}
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GroupSection — collapsible domain group for grouped view
+// ---------------------------------------------------------------------------
+function GroupSection({
+  group,
+  onSkillClick,
+}: {
+  group: SkillGroup;
+  onSkillClick: (skill: SkillEntry) => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="rounded-md border">
+      <button
+        type="button"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-accent/50 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="text-sm text-muted-foreground">
+          {expanded ? "\u25BC" : "\u25B6"}
+        </span>
+        <span className="font-semibold text-sm">{group.domain}</span>
+        <Badge variant="secondary" className="text-[10px] ml-1">
+          {group.skills.length}
+        </Badge>
+      </button>
+
+      {expanded && (
+        <div className="border-t divide-y">
+          {group.skills.map((skill, index) => {
+            const sourceStyle = SOURCE_BADGE_STYLES[skill.source] ?? {
+              label: skill.source,
+              className: "",
+            };
+            return (
+              <button
+                key={`${skill.name}-${index}`}
+                type="button"
+                className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-accent/30 transition-colors"
+                onClick={() => onSkillClick(skill)}
+              >
+                <span className="shrink-0 w-[240px] truncate font-mono text-sm">
+                  {skill.name}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`shrink-0 text-[10px] ${sourceStyle.className}`}
+                >
+                  {sourceStyle.label}
+                </Badge>
+                <span className="flex-1 truncate text-xs text-muted-foreground">
+                  {skill.description || "无描述"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

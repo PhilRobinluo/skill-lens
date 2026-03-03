@@ -31,7 +31,7 @@ function makeSkill(name: string): SkillEntry {
     lineCount: 10,
     lastModified: new Date().toISOString(),
     claudeMdRefs: [],
-    tags: { domain: [], frequency: null, pipeline: null },
+    tags: { domain: [], autoTagged: false, frequency: null, pipeline: null },
     dependencies: [],
     notes: "",
   };

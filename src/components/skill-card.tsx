@@ -11,19 +11,19 @@ interface SkillCardProps {
 
 const SOURCE_STYLES: Record<string, { label: string; className: string }> = {
   "self-built": {
-    label: "self-built",
+    label: "自建",
     className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
   },
   baoyu: {
-    label: "baoyu",
+    label: "宝玉系列",
     className: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
   },
   "plugin-official": {
-    label: "official",
+    label: "官方插件",
     className: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
   },
   "plugin-community": {
-    label: "community",
+    label: "社区插件",
     className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
   },
 };

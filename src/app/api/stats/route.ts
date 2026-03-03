@@ -3,6 +3,13 @@ import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
 import type { DashboardStats } from "@/lib/types";
 
+const SOURCE_LABELS: Record<string, string> = {
+  "self-built": "自建",
+  baoyu: "宝玉系列",
+  "plugin-official": "官方插件",
+  "plugin-community": "社区插件",
+};
+
 export async function GET(): Promise<NextResponse> {
   await ensureInitialized();
 
@@ -23,16 +30,17 @@ export async function GET(): Promise<NextResponse> {
       }
       // Count skills with no domain tags
       if (skill.tags.domain.length === 0) {
-        domainDistribution["untagged"] =
-          (domainDistribution["untagged"] || 0) + 1;
+        domainDistribution["未分类"] =
+          (domainDistribution["未分类"] || 0) + 1;
       }
     }
 
-    // Source distribution
+    // Source distribution (with Chinese labels)
     const sourceDistribution: Record<string, number> = {};
     for (const skill of skills) {
-      sourceDistribution[skill.source] =
-        (sourceDistribution[skill.source] || 0) + 1;
+      const label = SOURCE_LABELS[skill.source] ?? skill.source;
+      sourceDistribution[label] =
+        (sourceDistribution[label] || 0) + 1;
     }
 
     // Recent changes: top 10 by lastModified

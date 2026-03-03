@@ -192,12 +192,101 @@ async function buildSkillEntry(
     claudeMdRefs: [],
     tags: {
       domain: [],
+      autoTagged: false,
       frequency: null,
       pipeline: null,
     },
     dependencies: [],
     notes: "",
   };
+}
+
+// ---------------------------------------------------------------------------
+// autoInferTags — infer domain tags for skills without manual tags
+// ---------------------------------------------------------------------------
+
+/** Mapping from CLAUDE.md routing table names to domain tags. */
+const ROUTING_TABLE_DOMAIN_MAP: Record<string, string> = {
+  "Obsidian Skill 路由表": "笔记",
+  "写作工作流 Skill 路由": "写作",
+  "任务系统 Skill 路由": "任务",
+  "Notion 协作路由": "Notion",
+  "安全防护 Skill 路由": "安全",
+  "设备与网络 Skill 路由": "设备/网络",
+  "信息消费 Skill 路由": "信息消费",
+  "自动进化规则": "系统",
+  "思维增强 Skill 路由": "思维",
+  "投资系统路由": "投资",
+};
+
+/** baoyu-* sub-categories: image/generation vs publishing */
+const BAOYU_IMAGE_SKILLS = new Set([
+  "baoyu-image-gen",
+  "baoyu-cover-image",
+  "baoyu-xhs-images",
+  "baoyu-infographic",
+  "baoyu-slide-deck",
+  "baoyu-comic",
+  "baoyu-article-illustrator",
+  "baoyu-compress-image",
+]);
+
+const BAOYU_PUBLISH_SKILLS = new Set([
+  "baoyu-post-to-wechat",
+  "baoyu-post-to-x",
+  "baoyu-danger-x-to-markdown",
+  "baoyu-danger-gemini-web",
+  "baoyu-url-to-markdown",
+]);
+
+/**
+ * Auto-infer domain tags for a skill based on 4-level priority:
+ * 1. CLAUDE.md routing table name
+ * 2. Name prefix patterns
+ * 3. Description keyword matching (first 100 chars)
+ * 4. Fallback to "未分类"
+ */
+export function autoInferTags(skill: SkillEntry): string[] {
+  // Priority 1: CLAUDE.md routing table name → domain tag
+  if (skill.claudeMdRefs.length > 0) {
+    const inferred = new Set<string>();
+    for (const ref of skill.claudeMdRefs) {
+      const domain = ROUTING_TABLE_DOMAIN_MAP[ref.table];
+      if (domain) inferred.add(domain);
+    }
+    if (inferred.size > 0) return Array.from(inferred);
+  }
+
+  // Priority 2: Name prefix → domain tag
+  const name = skill.name;
+
+  if (name.startsWith("baoyu-")) {
+    if (BAOYU_IMAGE_SKILLS.has(name)) return ["图像/生成"];
+    if (BAOYU_PUBLISH_SKILLS.has(name)) return ["发布"];
+    // Default baoyu fallback — check description
+  }
+  if (name.startsWith("obsidian-")) return ["笔记"];
+  if (name.startsWith("article-")) return ["写作"];
+  if (name.startsWith("video-")) return ["视频"];
+  if (name.startsWith("slack-") || name.startsWith("slack:")) return ["协作"];
+  if (name.startsWith("Notion") || name.startsWith("notion:") || name.startsWith("Notion:")) return ["Notion"];
+  if (name.startsWith("vercel") || name.startsWith("vercel:")) return ["部署"];
+  if (name.startsWith("superpowers:")) return ["开发流程"];
+  if (name.startsWith("planning-with-files")) return ["规划"];
+  if (name.startsWith("code-review")) return ["代码审查"];
+  if (name.startsWith("ralph-loop")) return ["开发流程"];
+
+  // Priority 3: Description keyword matching (first 100 chars)
+  const desc = skill.description.slice(0, 100);
+  if (/写作|文章|写|发布/.test(desc)) return ["写作"];
+  if (/图|image|生成/.test(desc)) return ["图像/生成"];
+  if (/安全|security|审计/.test(desc)) return ["安全"];
+  if (/视频|video|抖音/.test(desc)) return ["视频"];
+  if (/笔记|Obsidian|仓库/.test(desc)) return ["笔记"];
+  if (/任务|task|待办/.test(desc)) return ["任务"];
+
+  // Priority 4: Fallback
+  return ["未分类"];
 }
 
 // ---------------------------------------------------------------------------
@@ -238,6 +327,14 @@ export async function scanAll(
         skills[key].dependencies = existingEntry.dependencies;
         skills[key].notes = existingEntry.notes;
       }
+    }
+  }
+
+  // Auto-infer domain tags for skills that have no manual tags
+  for (const skill of Object.values(skills)) {
+    if (skill.tags.domain.length === 0) {
+      skill.tags.domain = autoInferTags(skill);
+      skill.tags.autoTagged = true;
     }
   }
 

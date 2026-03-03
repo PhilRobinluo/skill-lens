@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/", label: "Dashboard" },
-  { href: "/skills", label: "Skills" },
-  { href: "/graph", label: "Graph" },
-  { href: "/pipelines", label: "Pipelines" },
+  { href: "/", label: "总览" },
+  { href: "/skills", label: "技能库" },
+  { href: "/graph", label: "依赖图" },
+  { href: "/pipelines", label: "编排" },
 ];
 
 export function Nav() {

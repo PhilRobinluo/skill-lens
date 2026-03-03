@@ -106,14 +106,14 @@ export default function DashboardPage() {
       {/* Row 1: Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Skills"
+          title="技能总数"
           value={stats.totalSkills}
-          description="All scanned skills"
+          description="已扫描的全部技能"
         />
         <StatCard
-          title="Routed Skills"
+          title="路由表引用"
           value={stats.routedSkills}
-          description="Referenced in CLAUDE.md"
+          description="在 CLAUDE.md 中被引用"
           icon={
             <svg
               className="h-4 w-4 text-green-500"
@@ -131,15 +131,15 @@ export default function DashboardPage() {
           }
         />
         <StatCard
-          title="Orphan Skills"
+          title="孤立技能"
           value={stats.orphanSkills}
-          description="Not referenced anywhere"
+          description="未被任何路由表引用"
           warning={stats.orphanSkills > stats.totalSkills * 0.5}
         />
         <StatCard
-          title="Pipelines"
+          title="编排链路"
           value={stats.totalPipelines}
-          description="Defined workflows"
+          description="已定义的工作流"
         />
       </div>
 
@@ -148,8 +148,8 @@ export default function DashboardPage() {
         {/* Domain Distribution Pie Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Domain Distribution</CardTitle>
-            <CardDescription>Skills by functional domain</CardDescription>
+            <CardTitle className="text-base">功能域分布</CardTitle>
+            <CardDescription>按功能域统计技能数量</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
@@ -193,8 +193,8 @@ export default function DashboardPage() {
         {/* Source Distribution Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Source Distribution</CardTitle>
-            <CardDescription>Skills by origin</CardDescription>
+            <CardTitle className="text-base">来源分布</CardTitle>
+            <CardDescription>按来源统计技能数量</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
@@ -230,9 +230,9 @@ export default function DashboardPage() {
       {/* Row 3: Recent Changes */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Recent Changes</CardTitle>
+          <CardTitle className="text-base">最近变动</CardTitle>
           <CardDescription>
-            Top 10 most recently modified skills
+            最近修改的 10 个技能
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -240,8 +240,8 @@ export default function DashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">Skill Name</th>
-                  <th className="pb-2 text-right font-medium">Last Modified</th>
+                  <th className="pb-2 font-medium">技能名称</th>
+                  <th className="pb-2 text-right font-medium">最后修改</th>
                 </tr>
               </thead>
               <tbody>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                       colSpan={2}
                       className="py-4 text-center text-muted-foreground"
                     >
-                      No skills found
+                      暂无技能
                     </td>
                   </tr>
                 )}

@@ -14,9 +14,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "Notion"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -30,9 +33,12 @@
       "lastModified": "2026-03-02T19:45:54.334Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -51,9 +57,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -67,9 +76,12 @@
       "lastModified": "2026-03-02T19:45:54.358Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -88,9 +100,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -104,9 +119,12 @@
       "lastModified": "2026-03-02T19:45:54.370Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -120,9 +138,12 @@
       "lastModified": "2026-03-02T19:45:54.366Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -136,9 +157,12 @@
       "lastModified": "2026-03-02T19:45:54.364Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -157,9 +181,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -173,9 +200,12 @@
       "lastModified": "2026-03-02T19:45:54.406Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -189,9 +219,12 @@
       "lastModified": "2026-03-02T19:45:54.380Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -205,9 +238,12 @@
       "lastModified": "2026-03-02T19:45:54.392Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -221,9 +257,12 @@
       "lastModified": "2026-03-02T19:45:54.384Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -237,9 +276,12 @@
       "lastModified": "2026-03-02T19:45:54.375Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -253,9 +295,12 @@
       "lastModified": "2026-03-02T19:45:54.386Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "发布"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -269,9 +314,12 @@
       "lastModified": "2026-03-02T19:45:54.401Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "发布"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -285,9 +333,12 @@
       "lastModified": "2026-03-02T19:45:54.404Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -301,9 +352,12 @@
       "lastModified": "2026-03-02T19:45:54.407Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -317,9 +371,12 @@
       "lastModified": "2026-03-02T19:45:54.423Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "发布"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -333,9 +390,12 @@
       "lastModified": "2026-03-02T19:45:54.443Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "发布"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -349,9 +409,12 @@
       "lastModified": "2026-03-02T19:45:54.411Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -365,9 +428,12 @@
       "lastModified": "2026-03-02T19:45:54.490Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "发布"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -381,9 +447,12 @@
       "lastModified": "2026-03-02T19:45:54.436Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -402,9 +471,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "思维"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -418,9 +490,12 @@
       "lastModified": "2026-03-02T19:45:54.430Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -434,9 +509,12 @@
       "lastModified": "2026-03-02T19:45:54.425Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -450,9 +528,12 @@
       "lastModified": "2026-03-02T19:45:54.428Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -466,9 +547,12 @@
       "lastModified": "2026-03-02T19:45:54.425Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -482,9 +566,12 @@
       "lastModified": "2026-03-02T19:45:54.485Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -503,9 +590,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -519,9 +609,12 @@
       "lastModified": "2026-03-02T19:45:54.484Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -535,9 +628,12 @@
       "lastModified": "2026-03-02T19:45:54.437Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -551,9 +647,12 @@
       "lastModified": "2026-03-02T19:45:54.499Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -567,9 +666,12 @@
       "lastModified": "2026-03-02T19:45:54.438Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -583,9 +685,12 @@
       "lastModified": "2026-03-02T19:45:54.540Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -604,9 +709,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -620,9 +728,12 @@
       "lastModified": "2026-03-02T19:45:54.488Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -636,9 +747,12 @@
       "lastModified": "2026-03-02T19:45:54.491Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -657,9 +771,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -673,9 +790,12 @@
       "lastModified": "2026-03-02T19:45:54.509Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -694,9 +814,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "安全"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -710,9 +833,12 @@
       "lastModified": "2026-03-02T19:45:54.506Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -726,9 +852,12 @@
       "lastModified": "2026-03-02T19:45:55.856Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -742,9 +871,12 @@
       "lastModified": "2026-03-02T19:45:54.543Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -758,9 +890,12 @@
       "lastModified": "2026-03-02T19:45:54.527Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -774,9 +909,12 @@
       "lastModified": "2026-03-02T19:45:54.532Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -790,9 +928,12 @@
       "lastModified": "2026-03-02T19:45:54.514Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -811,9 +952,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -827,9 +971,12 @@
       "lastModified": "2026-03-02T19:45:54.529Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -843,9 +990,12 @@
       "lastModified": "2026-03-02T19:45:54.544Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -859,9 +1009,12 @@
       "lastModified": "2026-03-02T19:45:54.534Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -875,9 +1028,12 @@
       "lastModified": "2026-03-02T19:45:54.565Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -891,9 +1047,12 @@
       "lastModified": "2026-03-02T19:45:54.547Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -907,9 +1066,12 @@
       "lastModified": "2026-03-02T19:45:54.535Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -923,9 +1085,36 @@
       "lastModified": "2026-03-02T19:45:54.572Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
+      },
+      "dependencies": [],
+      "notes": ""
+    },
+    "naming-master": {
+      "name": "naming-master",
+      "path": "/Users/qihang/.claude/skills/naming-master",
+      "source": "self-built",
+      "description": "【全能命名师】- 统一管理所有起名场景：笔记、文件、项目、Skill、MCP、产品、品牌、标题、Session、代码变量、Agent、课程。\n⛔ 任何需要\"起名/改名/命名/重命名\"的场景，必须先加载此 Skill！不调用 = 命名风格不统一、认知负担高、将来找不到、品牌辨识度低。\n⚠️ **隐式触发规则**：当你正在创建新文件、新笔记、新项目、新 Skill、新 Agent、新仓库时，即使用户没说\"起名\"，也必须按此 Skill 的规则命名。\n触发词：起名、命名、取名、改名、叫什么、名字、naming、rename、怎么命名、名字不好、名字太长、名字太短、文件名、笔记名、项目名、仓库名、品牌名、产品名、课程名、Agent名、标题、重命名。",
+      "lineCount": 381,
+      "lastModified": "2026-03-03T05:35:35.949Z",
+      "claudeMdRefs": [
+        {
+          "table": "命名 Skill 路由",
+          "trigger": "起名、命名、取名、改名、叫什么、名字、naming、rename、怎么命名、名字不好、名字太长、名字太短、文件名、笔记名、项目名、仓库名、品牌名、产品名、课程名、Agent名、标题、重命名"
+        }
+      ],
+      "tags": {
+        "domain": [
+          "笔记"
+        ],
+        "frequency": null,
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -939,9 +1128,12 @@
       "lastModified": "2026-03-02T19:45:55.868Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -960,9 +1152,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -981,9 +1176,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1002,9 +1200,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1023,9 +1224,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1044,9 +1248,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1065,9 +1272,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1086,9 +1296,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1111,9 +1324,13 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "笔记",
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1127,9 +1344,12 @@
       "lastModified": "2026-03-02T20:35:51.731Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1152,9 +1372,13 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络",
+          "思维"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1168,9 +1392,12 @@
       "lastModified": "2026-03-02T19:45:54.587Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1184,9 +1411,12 @@
       "lastModified": "2026-03-02T19:45:54.594Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1205,9 +1435,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "安全"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1221,9 +1454,12 @@
       "lastModified": "2026-03-02T19:45:54.602Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "开发流程"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1237,9 +1473,12 @@
       "lastModified": "2026-03-02T19:45:54.601Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1253,9 +1492,12 @@
       "lastModified": "2026-03-02T19:45:54.607Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1269,9 +1511,12 @@
       "lastModified": "2026-03-02T19:45:55.829Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1285,9 +1530,12 @@
       "lastModified": "2026-03-02T19:45:55.832Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1301,9 +1549,12 @@
       "lastModified": "2026-03-02T19:45:55.835Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "安全"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1317,7 +1568,9 @@
       "lastModified": "2026-03-02T19:45:55.032Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "Think"
+        ],
         "frequency": null,
         "pipeline": null
       },
@@ -1333,7 +1586,9 @@
       "lastModified": "2026-03-02T20:07:02.451Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "Think"
+        ],
         "frequency": null,
         "pipeline": null
       },
@@ -1349,9 +1604,12 @@
       "lastModified": "2026-03-02T19:45:55.838Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1365,9 +1623,12 @@
       "lastModified": "2026-03-02T19:45:55.855Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1386,9 +1647,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "安全"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1402,9 +1666,12 @@
       "lastModified": "2026-03-02T19:45:55.846Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1418,9 +1685,12 @@
       "lastModified": "2026-03-02T19:45:55.852Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1434,9 +1704,12 @@
       "lastModified": "2026-03-02T19:45:55.858Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1450,9 +1723,12 @@
       "lastModified": "2026-03-02T19:45:55.872Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1466,9 +1742,12 @@
       "lastModified": "2026-03-02T19:45:55.860Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1487,9 +1766,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1503,9 +1785,12 @@
       "lastModified": "2026-03-02T19:45:55.861Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1519,9 +1804,12 @@
       "lastModified": "2026-03-02T19:45:55.868Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1535,9 +1823,12 @@
       "lastModified": "2026-03-02T19:45:55.881Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "视频"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1551,9 +1842,12 @@
       "lastModified": "2026-03-02T19:45:55.889Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "视频"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1567,9 +1861,12 @@
       "lastModified": "2026-03-02T19:45:55.873Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1583,9 +1880,12 @@
       "lastModified": "2026-03-02T19:45:55.880Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1604,9 +1904,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1625,9 +1928,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1641,9 +1947,12 @@
       "lastModified": "2026-03-02T19:45:55.876Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1657,9 +1966,12 @@
       "lastModified": "2026-03-02T19:45:55.886Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1678,9 +1990,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "信息消费"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1694,9 +2009,12 @@
       "lastModified": "2026-03-02T19:45:55.882Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1715,9 +2033,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1731,9 +2052,12 @@
       "lastModified": "2026-03-02T19:45:55.891Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1747,9 +2071,12 @@
       "lastModified": "2026-03-02T19:45:55.885Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "写作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1763,9 +2090,12 @@
       "lastModified": "2026-03-02T19:45:55.891Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "图像/生成"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1784,9 +2114,12 @@
         }
       ],
       "tags": {
-        "domain": [],
+        "domain": [
+          "设备/网络"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1800,9 +2133,12 @@
       "lastModified": "2026-03-02T19:45:55.886Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1816,9 +2152,12 @@
       "lastModified": "2026-02-28T04:46:49.675Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1832,9 +2171,12 @@
       "lastModified": "2026-02-28T04:46:49.676Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1848,9 +2190,12 @@
       "lastModified": "2026-02-28T04:46:49.677Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1864,9 +2209,12 @@
       "lastModified": "2026-02-28T04:46:49.678Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1880,9 +2228,12 @@
       "lastModified": "2026-02-24T05:54:46.277Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1896,9 +2247,12 @@
       "lastModified": "2026-02-24T07:35:41.306Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "协作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1912,9 +2266,12 @@
       "lastModified": "2026-02-24T07:35:41.306Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "协作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1928,9 +2285,12 @@
       "lastModified": "2026-01-31T20:50:26.480Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1944,9 +2304,12 @@
       "lastModified": "2026-01-31T20:50:26.480Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1960,9 +2323,12 @@
       "lastModified": "2026-01-31T20:50:26.480Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1976,9 +2342,12 @@
       "lastModified": "2026-01-31T21:24:14.236Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "规划"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -1992,9 +2361,12 @@
       "lastModified": "2026-02-28T05:22:35.147Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2008,9 +2380,12 @@
       "lastModified": "2026-02-28T05:22:35.147Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2024,9 +2399,12 @@
       "lastModified": "2026-02-28T05:22:35.148Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2040,9 +2418,12 @@
       "lastModified": "2026-02-28T05:22:35.148Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2056,9 +2437,12 @@
       "lastModified": "2026-02-28T05:22:35.148Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2072,9 +2456,12 @@
       "lastModified": "2026-02-28T05:22:35.148Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2088,9 +2475,12 @@
       "lastModified": "2026-02-28T05:22:35.148Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2104,9 +2494,12 @@
       "lastModified": "2026-02-28T05:22:35.149Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2120,9 +2513,12 @@
       "lastModified": "2026-02-28T05:22:35.149Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2136,9 +2532,12 @@
       "lastModified": "2026-02-28T05:22:35.150Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2152,9 +2551,12 @@
       "lastModified": "2026-02-28T05:22:35.150Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2168,9 +2570,12 @@
       "lastModified": "2026-02-28T05:22:35.150Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2184,9 +2589,12 @@
       "lastModified": "2026-02-28T05:22:35.150Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "任务"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2200,9 +2608,12 @@
       "lastModified": "2026-02-28T05:22:35.150Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "未分类"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2216,9 +2627,12 @@
       "lastModified": "2026-03-01T04:39:41.404Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "协作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
@@ -2232,18 +2646,31 @@
       "lastModified": "2026-03-01T04:39:41.404Z",
       "claudeMdRefs": [],
       "tags": {
-        "domain": [],
+        "domain": [
+          "协作"
+        ],
         "frequency": null,
-        "pipeline": null
+        "pipeline": null,
+        "autoTagged": true
       },
       "dependencies": [],
       "notes": ""
     }
   },
-  "pipelines": {},
+  "pipelines": {
+    "文章": {
+      "description": "开始",
+      "steps": [
+        {
+          "skill": "placeholder",
+          "role": "起始"
+        }
+      ]
+    }
+  },
   "meta": {
-    "lastScan": "2026-03-03T04:42:13.150Z",
-    "totalSkills": 131,
-    "version": 4
+    "lastScan": "2026-03-03T05:36:18.260Z",
+    "totalSkills": 132,
+    "version": 10
   }
 }

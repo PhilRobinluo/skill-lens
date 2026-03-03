@@ -13,6 +13,7 @@ export interface ClaudeMdRef {
 
 export interface SkillTags {
   domain: string[];
+  autoTagged: boolean;
   frequency: Frequency | null;
   pipeline: string | null;
 }
