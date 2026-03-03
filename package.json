@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^2.0.4",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@xyflow/react": "^12.10.1",
     "chokidar": "^5.0.0",
     "class-variance-authority": "^0.7.1",
