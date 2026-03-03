@@ -23,6 +23,7 @@ export interface SkillEntry {
   source: SkillSource;
   description: string;
   lineCount: number;
+  createdAt: string;
   lastModified: string;
   claudeMdRefs: ClaudeMdRef[];
   tags: SkillTags;
@@ -34,6 +35,7 @@ export interface RegistryMeta {
   lastScan: string | null;
   totalSkills: number;
   version: number;
+  customTags?: string[];
 }
 
 export interface SkillsRegistry {

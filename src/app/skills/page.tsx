@@ -309,6 +309,7 @@ function SkillsPageInner() {
       {viewMode === "table" && (
         <SkillsTable
           skills={skills}
+          allDomains={allDomains}
           onNameClick={handleCardClick}
           onUpdated={handleSheetUpdated}
           callStatsMap={callStatsMap}

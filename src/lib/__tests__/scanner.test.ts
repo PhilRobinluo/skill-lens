@@ -98,7 +98,7 @@ describe("detectSource", () => {
     expect(
       detectSource(
         "deploy",
-        "/Users/qihang/.claude/plugins/cache/claude-plugins-official/vercel/1.0.0/skills/deploy",
+        "/home/user/.claude/plugins/cache/claude-plugins-official/vercel/1.0.0/skills/deploy",
       ),
     ).toBe("plugin-official");
   });
@@ -107,7 +107,7 @@ describe("detectSource", () => {
     expect(
       detectSource(
         "test-driven-development",
-        "/Users/qihang/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/test-driven-development",
+        "/home/user/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/skills/test-driven-development",
       ),
     ).toBe("plugin-community");
   });
@@ -116,7 +116,7 @@ describe("detectSource", () => {
     expect(
       detectSource(
         "ai-task-system",
-        "/Users/qihang/.claude/skills/ai-task-system",
+        "/home/user/.claude/skills/ai-task-system",
       ),
     ).toBe("self-built");
   });
@@ -126,7 +126,7 @@ describe("detectSource", () => {
     expect(
       detectSource(
         "baoyu-something",
-        "/Users/qihang/.claude/plugins/cache/claude-plugins-official/baoyu-something",
+        "/home/user/.claude/plugins/cache/claude-plugins-official/baoyu-something",
       ),
     ).toBe("baoyu");
   });

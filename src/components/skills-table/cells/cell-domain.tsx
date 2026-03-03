@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -8,18 +8,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DOMAIN_SUGGESTIONS } from "@/components/skill-detail-sheet";
 import type { SkillEntry } from "@/lib/types";
 
 interface CellDomainProps {
   skill: SkillEntry;
+  allDomains?: string[];
   onChange: (domains: string[]) => void;
 }
 
-export function CellDomain({ skill, onChange }: CellDomainProps) {
+export function CellDomain({ skill, allDomains, onChange }: CellDomainProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const domains = skill.tags.domain;
+
+  // All existing domains from the registry as suggestions
+  const allSuggestions = useMemo(() => {
+    return allDomains ? [...allDomains].sort() : [];
+  }, [allDomains]);
 
   function addDomain(d: string) {
     const trimmed = d.trim();
@@ -34,8 +39,8 @@ export function CellDomain({ skill, onChange }: CellDomainProps) {
   }
 
   const filtered = input.trim()
-    ? DOMAIN_SUGGESTIONS.filter((s) => s.includes(input) && !domains.includes(s))
-    : DOMAIN_SUGGESTIONS.filter((s) => !domains.includes(s));
+    ? allSuggestions.filter((s) => s.includes(input) && !domains.includes(s))
+    : allSuggestions.filter((s) => !domains.includes(s));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

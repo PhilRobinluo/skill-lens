@@ -70,7 +70,8 @@ export function useAutoRefresh(refetch: () => void) {
       "type" in data
     ) {
       const eventType = (data as { type: string }).type;
-      if (eventType !== "heartbeat" && eventType !== "connected") {
+      // Refetch on any event except heartbeat (including "connected" to catch missed updates)
+      if (eventType !== "heartbeat") {
         refetchRef.current();
       }
     }

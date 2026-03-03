@@ -24,10 +24,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getColumns, type ColumnCallbacks } from "./columns";
+import { getColumns, type ColumnCallbacks, type SkillTableMeta } from "./columns";
 import { TableToolbar } from "./table-toolbar";
 import { filterSkills } from "./table-filter-builder";
-import { useSkillMutations } from "@/hooks/use-skill-mutations";
+import { TagManager } from "@/components/tag-manager";
 import type { SkillEntry, FilterState } from "@/lib/types";
 import type { SkillCallStats } from "@/lib/frequency-scanner";
 
@@ -47,15 +47,25 @@ function loadJson<T>(key: string, fallback: T): T {
 
 interface SkillsTableProps {
   skills: SkillEntry[];
+  allDomains?: string[];
   onNameClick: (skill: SkillEntry) => void;
   onUpdated: () => void;
   callStatsMap?: Record<string, SkillCallStats>;
 }
 
-export function SkillsTable({ skills, onNameClick, onUpdated, callStatsMap }: SkillsTableProps) {
-  // Mutation target
-  const [mutTarget, setMutTarget] = useState<string | null>(null);
-  const { patchTags } = useSkillMutations({ skillName: mutTarget, onUpdated });
+export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callStatsMap }: SkillsTableProps) {
+  // Direct API call for domain changes (avoids stale closure with useSkillMutations)
+  const patchDomain = useCallback(
+    async (skillName: string, domains: string[]) => {
+      await fetch(`/api/skills/${encodeURIComponent(skillName)}/tags`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: domains }),
+      });
+      onUpdated();
+    },
+    [onUpdated],
+  );
 
   // Table state
   const [sorting, setSorting] = useState<SortingState>(() => loadJson(LS_SORTING, []));
@@ -67,6 +77,21 @@ export function SkillsTable({ skills, onNameClick, onUpdated, callStatsMap }: Sk
   const [groupingKey, setGroupingKey] = useState("none");
   const [grouping, setGrouping] = useState<GroupingState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>(true);
+
+  // Tag manager sheet
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
+
+  // Rescan state
+  const [rescanning, setRescanning] = useState(false);
+  const handleRescan = useCallback(async () => {
+    setRescanning(true);
+    try {
+      await fetch("/api/scan", { method: "POST" });
+      onUpdated();
+    } finally {
+      setRescanning(false);
+    }
+  }, [onUpdated]);
 
   // Notion-style filter
   const [filterState, setFilterState] = useState<FilterState>({
@@ -94,14 +119,20 @@ export function SkillsTable({ skills, onNameClick, onUpdated, callStatsMap }: Sk
     () => ({
       onNameClick,
       onDomainChange: (skill, domains) => {
-        setMutTarget(skill.name);
-        setTimeout(() => patchTags({ domain: domains }), 0);
+        patchDomain(skill.name, domains);
       },
+      allDomains,
     }),
-    [onNameClick, patchTags],
+    [onNameClick, patchDomain, allDomains],
   );
 
   const columns = useMemo(() => getColumns(callbacks, callStatsMap), [callbacks, callStatsMap]);
+
+  // Pass callStatsMap through table meta (avoids stale closure issues with column defs)
+  const tableMeta: SkillTableMeta = useMemo(
+    () => ({ callStatsMap }),
+    [callStatsMap],
+  );
 
   // Grouping sync
   useEffect(() => {
@@ -130,6 +161,7 @@ export function SkillsTable({ skills, onNameClick, onUpdated, callStatsMap }: Sk
     onGlobalFilterChange: setGlobalFilter,
     onGroupingChange: setGrouping,
     onExpandedChange: setExpanded,
+    meta: tableMeta,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -153,6 +185,9 @@ export function SkillsTable({ skills, onNameClick, onUpdated, callStatsMap }: Sk
         onFilterStateChange={setFilterState}
         grouping={groupingKey}
         onGroupingChange={handleGroupingChange}
+        onTagManagerOpen={() => setTagManagerOpen(true)}
+        onRescan={handleRescan}
+        rescanning={rescanning}
       />
 
       <div className="rounded-md border">
@@ -227,6 +262,12 @@ export function SkillsTable({ skills, onNameClick, onUpdated, callStatsMap }: Sk
         共 {filteredSkills.length} 个技能
         {filterState.conditions.length > 0 && ` (筛选自 ${skills.length} 个)`}
       </div>
+
+      <TagManager
+        open={tagManagerOpen}
+        onOpenChange={setTagManagerOpen}
+        onUpdated={onUpdated}
+      />
     </div>
   );
 }

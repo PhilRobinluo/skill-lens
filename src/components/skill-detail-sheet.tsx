@@ -13,15 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useSkillMutations } from "@/hooks/use-skill-mutations";
-import type { SkillEntry, Frequency } from "@/lib/types";
+import type { SkillEntry } from "@/lib/types";
 
 interface SkillDetailSheetProps {
   skill: SkillEntry | null;
@@ -31,19 +24,6 @@ interface SkillDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
 }
-
-export const DOMAIN_SUGGESTIONS = [
-  "写作", "笔记", "安全", "网络", "任务", "图像",
-  "发布", "分析", "设备", "工具", "视频", "投资",
-];
-
-export const FREQUENCY_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "unset", label: "Unset" },
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "occasional", label: "Occasional" },
-  { value: "rare", label: "Rare" },
-];
 
 export const SOURCE_LABELS: Record<string, string> = {
   "self-built": "自建",
@@ -63,13 +43,8 @@ export function SkillDetailSheet({
   // Local editable state
   const [domains, setDomains] = useState<string[]>([]);
   const [domainInput, setDomainInput] = useState("");
-  const [frequency, setFrequency] = useState<string>("unset");
-  const [deps, setDeps] = useState<string[]>([]);
-  const [depInput, setDepInput] = useState("");
   const [notes, setNotes] = useState("");
-  const [depSuggestions, setDepSuggestions] = useState<string[]>([]);
   const [domainSuggestions, setDomainSuggestions] = useState<string[]>([]);
-  const [showDepSuggestions, setShowDepSuggestions] = useState(false);
   const [showDomainSuggestions, setShowDomainSuggestions] = useState(false);
   const [rawContent, setRawContent] = useState<string | null>(null);
   const [rawContentPath, setRawContentPath] = useState<string | null>(null);
@@ -80,11 +55,8 @@ export function SkillDetailSheet({
   useEffect(() => {
     if (skill) {
       setDomains(skill.tags.domain);
-      setFrequency(skill.tags.frequency ?? "unset");
-      setDeps(skill.dependencies);
       setNotes(skill.notes);
       setDomainInput("");
-      setDepInput("");
       setRawContent(null);
       setRawContentPath(null);
       setRawError(null);
@@ -92,7 +64,7 @@ export function SkillDetailSheet({
     }
   }, [skill]);
 
-  const { patchTags, putDeps, debouncedPatchNotes } =
+  const { patchTags, debouncedPatchNotes } =
     useSkillMutations({ skillName: skill?.name ?? null, onUpdated });
 
   // Handlers
@@ -112,11 +84,9 @@ export function SkillDetailSheet({
     patchTags({ domain: next });
   }
 
-  // Merge static suggestions with actual existing domains from all skills
+  // All existing domains from the registry as suggestions
   const domainPool = useMemo(() => {
-    const set = new Set(DOMAIN_SUGGESTIONS);
-    if (allDomains) for (const d of allDomains) set.add(d);
-    return Array.from(set).sort();
+    return allDomains ? [...allDomains].sort() : [];
   }, [allDomains]);
 
   function handleDomainInputChange(val: string) {
@@ -133,52 +103,6 @@ export function SkillDetailSheet({
       e.preventDefault();
       addDomain(domainInput);
     }
-  }
-
-  function addDep(d: string) {
-    const trimmed = d.trim();
-    if (!trimmed || deps.includes(trimmed)) return;
-    const next = [...deps, trimmed];
-    setDeps(next);
-    setDepInput("");
-    setShowDepSuggestions(false);
-    putDeps(next);
-  }
-
-  function removeDep(d: string) {
-    const next = deps.filter((x) => x !== d);
-    setDeps(next);
-    putDeps(next);
-  }
-
-  function handleDepInputChange(val: string) {
-    setDepInput(val);
-    if (val.trim()) {
-      const filtered = allSkillNames.filter(
-        (s) =>
-          s.toLowerCase().includes(val.toLowerCase()) &&
-          !deps.includes(s) &&
-          s !== skill?.name,
-      );
-      setDepSuggestions(filtered.slice(0, 8));
-      setShowDepSuggestions(filtered.length > 0);
-    } else {
-      setShowDepSuggestions(false);
-    }
-  }
-
-  function handleDepKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addDep(depInput);
-    }
-  }
-
-  function handleFrequencyChange(value: string) {
-    setFrequency(value);
-    patchTags({
-      frequency: value === "unset" ? null : (value as Frequency),
-    });
   }
 
   function handleNotesChange(value: string) {
@@ -248,10 +172,26 @@ export function SkillDetailSheet({
               <span>{SOURCE_LABELS[skill.source] ?? skill.source}</span>
               <span className="text-muted-foreground">Lines</span>
               <span>{skill.lineCount}</span>
+              <span className="text-muted-foreground">Created</span>
+              <span>{skill.createdAt ? new Date(skill.createdAt).toLocaleDateString() : "—"}</span>
               <span className="text-muted-foreground">Modified</span>
               <span>{new Date(skill.lastModified).toLocaleDateString()}</span>
               <span className="text-muted-foreground">Path</span>
-              <span className="break-all font-mono text-xs">{skill.path}</span>
+              <span className="flex items-center gap-1.5 break-all font-mono text-xs">
+                <span className="flex-1">{skill.path}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    fetch(`/api/skills/${encodeURIComponent(skill.name)}/open`, {
+                      method: "POST",
+                    });
+                  }}
+                  className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
+                  title="在 Finder 中打开"
+                >
+                  打开
+                </button>
+              </span>
             </div>
           </section>
 
@@ -335,89 +275,6 @@ export function SkillDetailSheet({
                       onMouseDown={(e) => {
                         e.preventDefault();
                         addDomain(s);
-                      }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Editable: Frequency */}
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              Frequency
-            </h3>
-            <Select value={frequency} onValueChange={handleFrequencyChange}>
-              <SelectTrigger className="h-8 w-full text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FREQUENCY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </section>
-
-          {/* Editable: Dependencies */}
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              Dependencies
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {deps.map((d) => (
-                <Badge key={d} variant="outline" className="gap-1 pr-1">
-                  {d}
-                  <button
-                    onClick={() => removeDep(d)}
-                    className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
-                    aria-label={`Remove ${d}`}
-                  >
-                    <span className="text-xs">&times;</span>
-                  </button>
-                </Badge>
-              ))}
-              {deps.length === 0 && (
-                <span className="text-xs text-muted-foreground">None</span>
-              )}
-            </div>
-            <div className="relative">
-              <Input
-                placeholder="Add dependency..."
-                value={depInput}
-                onChange={(e) => handleDepInputChange(e.target.value)}
-                onKeyDown={handleDepKeyDown}
-                onBlur={() =>
-                  setTimeout(() => setShowDepSuggestions(false), 150)
-                }
-                onFocus={() => {
-                  if (depInput.trim()) {
-                    const filtered = allSkillNames.filter(
-                      (s) =>
-                        s.toLowerCase().includes(depInput.toLowerCase()) &&
-                        !deps.includes(s) &&
-                        s !== skill?.name,
-                    );
-                    setDepSuggestions(filtered.slice(0, 8));
-                    setShowDepSuggestions(filtered.length > 0);
-                  }
-                }}
-                className="h-8 text-sm"
-              />
-              {showDepSuggestions && depSuggestions.length > 0 && (
-                <div className="absolute z-50 mt-1 max-h-40 w-full overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
-                  {depSuggestions.map((s) => (
-                    <button
-                      key={s}
-                      className="w-full rounded-sm px-2 py-1 text-left text-sm hover:bg-accent"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        addDep(s);
                       }}
                     >
                       {s}

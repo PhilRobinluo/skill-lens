@@ -3,22 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph3D from "react-force-graph-3d";
 import * as THREE from "three";
-import { Search, Filter } from "lucide-react";
+import { Search, PanelLeftOpen, PanelLeftClose, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { SkillDetailSheet } from "@/components/skill-detail-sheet";
 import { buildGraphData, type GraphNode } from "@/lib/graph-data";
 import type { SkillEntry } from "@/lib/types";
@@ -44,7 +34,7 @@ interface SkillGraph3DProps {
 }
 
 // ---------------------------------------------------------------------------
-// Sprite text helper — creates a text label sprite for Three.js
+// Sprite text helper
 // ---------------------------------------------------------------------------
 
 function createTextSprite(
@@ -62,13 +52,11 @@ function createTextSprite(
   const metrics = ctx.measureText(text);
   const textWidth = metrics.width;
 
-  // Canvas sizing (with padding)
   const padX = 14;
   const padY = 10;
   canvas.width = textWidth + padX * 2;
   canvas.height = fontSize + padY * 2;
 
-  // Draw rounded-rect background
   if (bgColor) {
     const r = 8;
     ctx.fillStyle = bgColor;
@@ -86,7 +74,6 @@ function createTextSprite(
     ctx.fill();
   }
 
-  // Draw text
   ctx.font = font;
   ctx.fillStyle = color;
   ctx.textAlign = "center";
@@ -121,14 +108,18 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [searchQuery, setSearchQuery] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [domainFilter, setDomainFilter] = useState("all");
+
+  // Filter state — multi-select
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
+  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [domainSearch, setDomainSearch] = useState("");
 
   // Detail sheet
   const [selectedSkill, setSelectedSkill] = useState<SkillEntry | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Domain info panel (for domain hub clicks)
+  // Domain info panel
   const [selectedDomain, setSelectedDomain] = useState<{ name: string; skills: SkillEntry[] } | null>(null);
 
   // Resize
@@ -145,31 +136,40 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
     return () => observer.disconnect();
   }, []);
 
-  // Collect all domains for filter dropdown
-  const allDomains = useMemo(() => {
-    const domainSet = new Set<string>();
+  // Collect domain stats for filter
+  const domainStats = useMemo(() => {
+    const map = new Map<string, number>();
     for (const s of skills) {
-      for (const d of s.tags.domain) domainSet.add(d);
+      for (const d of s.tags.domain) {
+        map.set(d, (map.get(d) ?? 0) + 1);
+      }
     }
-    return Array.from(domainSet).sort();
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
   }, [skills]);
+
+  // All domains for sheet
+  const allDomains = useMemo(() => domainStats.map((d) => d.name), [domainStats]);
 
   // Filter skills
   const filteredSkills = useMemo(() => {
     let result = skills;
-    if (sourceFilter !== "all") {
-      result = result.filter((s) => s.source === sourceFilter);
+    if (selectedSources.size > 0) {
+      result = result.filter((s) => selectedSources.has(s.source));
     }
-    if (domainFilter !== "all") {
-      result = result.filter((s) => s.tags.domain.includes(domainFilter));
+    if (selectedDomains.size > 0) {
+      result = result.filter((s) => s.tags.domain.some((d) => selectedDomains.has(d)));
     }
     return result;
-  }, [skills, sourceFilter, domainFilter]);
+  }, [skills, selectedSources, selectedDomains]);
+
+  const activeFilterCount = selectedSources.size + selectedDomains.size;
 
   // Build graph
   const graphData = useMemo(() => buildGraphData(filteredSkills), [filteredSkills]);
 
-  // Configure d3-force for tighter layout
+  // Configure d3-force
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
@@ -188,6 +188,30 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
       graphData.nodes.filter((n) => n.name.toLowerCase().includes(q)).map((n) => n.id),
     );
   }, [graphData.nodes, searchQuery]);
+
+  // Toggle helpers
+  function toggleSource(source: string) {
+    setSelectedSources((prev) => {
+      const next = new Set(prev);
+      if (next.has(source)) next.delete(source);
+      else next.add(source);
+      return next;
+    });
+  }
+
+  function toggleDomain(domain: string) {
+    setSelectedDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
+      return next;
+    });
+  }
+
+  function clearAllFilters() {
+    setSelectedSources(new Set());
+    setSelectedDomains(new Set());
+  }
 
   // Node click handler
   const handleNodeClick = useCallback(
@@ -216,12 +240,11 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
     [skills],
   );
 
-  // Custom node renderer: sphere + text label with background
+  // Custom node renderer
   const nodeThreeObject = useCallback(
     (node: GraphNode) => {
       const group = new THREE.Group();
 
-      // Sphere — capped radius
       const radius = node.nodeType === "domain"
         ? Math.min(10, Math.max(4, node.val * 0.6))
         : Math.min(5, Math.max(1.5, node.val * 0.6));
@@ -242,7 +265,6 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
       const sphere = new THREE.Mesh(geometry, material);
       group.add(sphere);
 
-      // Text label with semi-transparent background — in front of sphere
       const label = node.nodeType === "domain"
         ? `【${node.name}】`
         : node.name;
@@ -253,7 +275,6 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
         : "rgba(0,0,0,0.5)";
       const scaleFactor = node.nodeType === "domain" ? 0.18 : 0.1;
       const sprite = createTextSprite(label, textColor, textSize, bgColor, scaleFactor);
-      // Domain labels float above the sphere, skill labels in front
       if (node.nodeType === "domain") {
         sprite.position.set(0, radius + 4, 0);
       } else {
@@ -266,7 +287,6 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
     [highlightedNodes],
   );
 
-  // Link colors
   const linkColor = useCallback((link: { type: string }) => {
     return link.type === "dependency" ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)";
   }, []);
@@ -275,10 +295,30 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
     return link.type === "dependency" ? 1.5 : 0.3;
   }, []);
 
+  // Filtered domain list for sidebar search
+  const filteredDomainStats = useMemo(() => {
+    if (!domainSearch.trim()) return domainStats;
+    const q = domainSearch.toLowerCase();
+    return domainStats.filter((d) => d.name.toLowerCase().includes(q));
+  }, [domainStats, domainSearch]);
+
   return (
     <div className="relative h-full w-full" ref={containerRef}>
-      {/* Toolbar */}
+      {/* Top toolbar — search + sidebar toggle + stats */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0 bg-background/90 backdrop-blur"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          title={sidebarOpen ? "收起筛选" : "展开筛选"}
+        >
+          {sidebarOpen
+            ? <PanelLeftClose className="h-3.5 w-3.5" />
+            : <PanelLeftOpen className="h-3.5 w-3.5" />
+          }
+        </Button>
+
         <div className="relative">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -289,69 +329,124 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
           />
         </div>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1 bg-background/90 backdrop-blur">
-              <Filter className="h-3.5 w-3.5" />
-              过滤
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] space-y-3 p-3" align="start">
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">来源</label>
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-xs">全部来源</SelectItem>
-                  {Object.entries(SOURCE_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k} className="text-xs">{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">领域标签</label>
-              <Select value={domainFilter} onValueChange={setDomainFilter}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-xs">全部领域</SelectItem>
-                  {allDomains.map((d) => (
-                    <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </PopoverContent>
-        </Popover>
-
         <div className="flex items-center gap-1 rounded-md border bg-background/90 backdrop-blur px-2 py-1">
           <span className="text-[10px] text-muted-foreground">
-            {graphData.nodes.filter((n) => n.nodeType === "skill").length} 技能 · {graphData.nodes.filter((n) => n.nodeType === "domain").length} 领域 · {graphData.links.length} 连线
+            {graphData.nodes.filter((n) => n.nodeType === "skill").length} 技能
+            {" · "}
+            {graphData.nodes.filter((n) => n.nodeType === "domain").length} 领域
+            {" · "}
+            {graphData.links.length} 连线
           </span>
         </div>
+
+        {activeFilterCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground"
+            onClick={clearAllFilters}
+          >
+            清除 {activeFilterCount} 个筛选
+          </Button>
+        )}
       </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 rounded-md border bg-background/90 backdrop-blur px-3 py-2">
-        <span className="text-[10px] font-medium text-muted-foreground">来源颜色</span>
-        <div className="flex items-center gap-2">
-          {Object.entries(SOURCE_COLORS).map(([source, color]) => (
-            <div key={source} className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[10px] text-muted-foreground">{SOURCE_LABELS[source]}</span>
+      {/* Left sidebar — filter panel */}
+      <div
+        className={`absolute top-14 left-3 z-10 flex flex-col rounded-md border bg-background/95 backdrop-blur shadow-lg transition-all duration-200 ${
+          sidebarOpen ? "w-[220px] max-h-[calc(100vh-8rem)] opacity-100" : "w-0 max-h-0 opacity-0 overflow-hidden border-0"
+        }`}
+      >
+        {sidebarOpen && (
+          <div className="flex flex-col overflow-hidden">
+            {/* Source section */}
+            <div className="px-3 pt-3 pb-2">
+              <h3 className="text-[11px] font-semibold text-muted-foreground mb-2">来源</h3>
+              <div className="space-y-1.5">
+                {Object.entries(SOURCE_LABELS).map(([key, label]) => {
+                  const count = skills.filter((s) => s.source === key).length;
+                  const checked = selectedSources.has(key);
+                  return (
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/50"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleSource(key)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span
+                        className="inline-block h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: SOURCE_COLORS[key] }}
+                      />
+                      <span className="text-xs flex-1">{label}</span>
+                      <span className="text-[10px] text-muted-foreground">{count}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
-        <span className="text-[10px] text-muted-foreground mt-0.5">
-          彩色大球 = 领域中心节点，点击查看详情
-        </span>
+
+            <Separator />
+
+            {/* Domain section */}
+            <div className="px-3 pt-2 pb-3 flex flex-col min-h-0 flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[11px] font-semibold text-muted-foreground">领域标签</h3>
+                {selectedDomains.size > 0 && (
+                  <button
+                    type="button"
+                    className="text-[10px] text-blue-500 hover:underline"
+                    onClick={() => setSelectedDomains(new Set())}
+                  >
+                    全部清除
+                  </button>
+                )}
+              </div>
+
+              <Input
+                placeholder="搜索标签..."
+                value={domainSearch}
+                onChange={(e) => setDomainSearch(e.target.value)}
+                className="h-6 text-[11px] mb-2"
+              />
+
+              <div className="overflow-y-auto flex-1 max-h-[40vh] space-y-0.5">
+                {filteredDomainStats.map((d) => {
+                  const checked = selectedDomains.has(d.name);
+                  return (
+                    <label
+                      key={d.name}
+                      className="flex items-center gap-2 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/50"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleDomain(d.name)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-xs flex-1 truncate">{d.name}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{d.count}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Domain info panel (when a domain hub is clicked) */}
+      {/* Legend — bottom left */}
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-3 rounded-md border bg-background/90 backdrop-blur px-3 py-1.5">
+        {Object.entries(SOURCE_COLORS).map(([source, color]) => (
+          <div key={source} className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+            <span className="text-[10px] text-muted-foreground">{SOURCE_LABELS[source]}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Domain info panel */}
       {selectedDomain && (
         <div className="absolute top-3 right-3 z-10 w-[300px] max-h-[calc(100vh-7rem)] overflow-y-auto rounded-md border bg-background/95 backdrop-blur p-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
@@ -364,7 +459,7 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
               onClick={() => setSelectedDomain(null)}
               className="text-muted-foreground hover:text-foreground"
             >
-              <span className="text-sm">✕</span>
+              <X className="h-4 w-4" />
             </button>
           </div>
           <div className="space-y-1.5">

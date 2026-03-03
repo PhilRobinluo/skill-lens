@@ -29,6 +29,31 @@ const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> 
 export interface ColumnCallbacks {
   onNameClick: (skill: SkillEntry) => void;
   onDomainChange: (skill: SkillEntry, domains: string[]) => void;
+  allDomains?: string[];
+}
+
+/** Table meta — pass dynamic data through table.options.meta instead of closures */
+export interface SkillTableMeta {
+  callStatsMap?: Record<string, SkillCallStats>;
+}
+
+/** Format ISO timestamp to relative time string */
+function formatRelativeTime(isoString: string): string {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) return "今天";
+  if (diffDays === 1) return "昨天";
+  if (diffDays < 7) return `${diffDays}天前`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}月前`;
+  return `${Math.floor(diffDays / 365)}年前`;
+}
+
+/** Heat dot color based on call count */
+function heatColor(total: number): string {
+  if (total >= 20) return "bg-blue-500";
+  if (total >= 5) return "bg-emerald-500";
+  return "bg-gray-300 dark:bg-gray-600";
 }
 
 export function getColumns(
@@ -40,25 +65,15 @@ export function getColumns(
     {
       accessorKey: "name",
       header: ({ column }) => <TableColumnHeader column={column} title="名称" />,
-      cell: ({ row }) => {
-        const skill = row.original;
-        const isRouted = skill.claudeMdRefs.length > 0;
-        return (
-          <button
-            type="button"
-            className="flex items-center gap-1.5 text-left font-mono text-sm hover:underline"
-            onClick={() => callbacks.onNameClick(skill)}
-          >
-            <span
-              className={isRouted ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}
-              title={isRouted ? "已路由" : "孤立"}
-            >
-              {isRouted ? "✓" : "✗"}
-            </span>
-            <span className="max-w-[200px] truncate">{skill.name}</span>
-          </button>
-        );
-      },
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className="max-w-[200px] truncate text-left font-mono text-sm hover:underline"
+          onClick={() => callbacks.onNameClick(row.original)}
+        >
+          {row.original.name}
+        </button>
+      ),
       enableGrouping: false,
     },
     // 2. Source
@@ -94,17 +109,19 @@ export function getColumns(
       },
       filterFn: "equals",
     },
-    // 4. Domain (editable)
+    // 4. Domain (editable + groupable by first domain)
     {
       id: "domain",
-      accessorFn: (row) => row.tags.domain.join(", "),
+      accessorFn: (row) => row.tags.domain[0] ?? "未分类",
       header: ({ column }) => <TableColumnHeader column={column} title="领域" />,
       cell: ({ row }) => (
         <CellDomain
           skill={row.original}
+          allDomains={callbacks.allDomains}
           onChange={(domains) => callbacks.onDomainChange(row.original, domains)}
         />
       ),
+      getGroupingValue: (row) => row.tags.domain[0] ?? "未分类",
     },
     // 5. Description
     {
@@ -117,7 +134,7 @@ export function getColumns(
       ),
       enableSorting: false,
     },
-    // 7. Line count
+    // 6. Line count
     {
       accessorKey: "lineCount",
       header: ({ column }) => <TableColumnHeader column={column} title="行数" />,
@@ -125,24 +142,45 @@ export function getColumns(
         <span className="text-sm tabular-nums">{row.original.lineCount}</span>
       ),
     },
-    // 7. Call stats
+    // 7. Call stats — heat dot + count + relative time
     {
       id: "callStats",
       accessorFn: (row) => callStatsMap?.[row.name]?.total ?? 0,
       header: ({ column }) => <TableColumnHeader column={column} title="调用统计" />,
-      cell: ({ row }) => {
-        const stats = callStatsMap?.[row.original.name];
+      cell: ({ row, table }) => {
+        const meta = table.options.meta as SkillTableMeta | undefined;
+        const stats = meta?.callStatsMap?.[row.original.name];
         if (!stats || stats.total === 0) {
-          return <span className="text-xs text-muted-foreground">—</span>;
+          return <span className="text-xs text-muted-foreground/50">未使用</span>;
         }
         return (
-          <span className="text-xs tabular-nums" title={stats.lastUsed ? `最后使用: ${new Date(stats.lastUsed).toLocaleDateString("zh-CN")}` : undefined}>
-            {stats.total} <span className="text-muted-foreground">({stats.last30d})</span>
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${heatColor(stats.total)}`} />
+            <span className={`text-xs tabular-nums ${stats.total >= 20 ? "font-medium" : ""}`}>
+              {stats.total}次
+            </span>
+            {stats.lastUsed && (
+              <span className="text-[10px] text-muted-foreground">
+                · {formatRelativeTime(stats.lastUsed)}
+              </span>
+            )}
+          </div>
         );
       },
     },
-    // 8. Last modified
+    // 8. Created at
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => <TableColumnHeader column={column} title="创建时间" />,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {row.original.createdAt
+            ? new Date(row.original.createdAt).toLocaleDateString("zh-CN")
+            : "—"}
+        </span>
+      ),
+    },
+    // 9. Last modified
     {
       accessorKey: "lastModified",
       header: ({ column }) => <TableColumnHeader column={column} title="更新时间" />,
@@ -152,7 +190,7 @@ export function getColumns(
         </span>
       ),
     },
-    // 8. Notes
+    // 10. Notes
     {
       accessorKey: "notes",
       header: "备注",

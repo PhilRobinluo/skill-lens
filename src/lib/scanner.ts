@@ -188,6 +188,7 @@ async function buildSkillEntry(
     source: detectSource(name, skillDir),
     description: parseSkillMd(content),
     lineCount: content.split("\n").length,
+    createdAt: stat.birthtime.toISOString(),
     lastModified: stat.mtime.toISOString(),
     claudeMdRefs: [],
     tags: {

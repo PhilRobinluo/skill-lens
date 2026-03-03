@@ -1,7 +1,7 @@
 "use client";
 
 import type { Table } from "@tanstack/react-table";
-import { Settings2, Group } from "lucide-react";
+import { Settings2, Group, Tags, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,12 +30,14 @@ const COLUMN_LABELS: Record<string, string> = {
   description: "描述",
   lineCount: "行数",
   callStats: "调用统计",
+  createdAt: "创建时间",
   lastModified: "更新时间",
   notes: "备注",
 };
 
 const GROUPING_OPTIONS = [
   { value: "none", label: "不分组" },
+  { value: "domain", label: "按领域" },
   { value: "source", label: "按来源" },
   { value: "status", label: "按路由状态" },
 ];
@@ -48,6 +50,9 @@ interface TableToolbarProps {
   onFilterStateChange: (state: FilterState) => void;
   grouping: string;
   onGroupingChange: (value: string) => void;
+  onTagManagerOpen?: () => void;
+  onRescan?: () => void;
+  rescanning?: boolean;
 }
 
 export function TableToolbar({
@@ -58,6 +63,9 @@ export function TableToolbar({
   onFilterStateChange,
   grouping,
   onGroupingChange,
+  onTagManagerOpen,
+  onRescan,
+  rescanning,
 }: TableToolbarProps) {
   return (
     <div className="flex items-center gap-2">
@@ -91,6 +99,33 @@ export function TableToolbar({
           </SelectContent>
         </Select>
       </div>
+
+      {/* Tag management */}
+      {onTagManagerOpen && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5"
+          onClick={onTagManagerOpen}
+        >
+          <Tags className="h-3.5 w-3.5" />
+          标签
+        </Button>
+      )}
+
+      {/* Rescan */}
+      {onRescan && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5"
+          onClick={onRescan}
+          disabled={rescanning}
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? "animate-spin" : ""}`} />
+          {rescanning ? "扫描中" : "刷新"}
+        </Button>
+      )}
 
       {/* Column visibility */}
       <DropdownMenu>

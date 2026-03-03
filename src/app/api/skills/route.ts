@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { type NextRequest, NextResponse } from "next/server";
 import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
@@ -16,7 +17,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const frequency = url.searchParams.get("frequency");
     const q = url.searchParams.get("q")?.toLowerCase();
 
-    let skills = Object.values(registry.skills);
+    // Filter out skills whose directories no longer exist on disk
+    // (handles the case where watcher hasn't completed rescan yet)
+    let skills = Object.values(registry.skills).filter((s) =>
+      fs.existsSync(s.path),
+    );
 
     // Apply filters
     if (domain) {
