@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { TableColumnHeader } from "./table-column-header";
 import { CellDomain } from "./cells/cell-domain";
+import { cleanDescriptionSummary, skillDisplayName } from "@/lib/utils";
 import type { SkillEntry } from "@/lib/types";
 import type { SkillCallStats } from "@/lib/frequency-scanner";
 
@@ -71,7 +72,7 @@ export function getColumns(
           className="max-w-[200px] truncate text-left font-mono text-sm hover:underline"
           onClick={() => callbacks.onNameClick(row.original)}
         >
-          {row.original.name}
+          {skillDisplayName(row.original.name)}
         </button>
       ),
       enableGrouping: false,
@@ -129,7 +130,7 @@ export function getColumns(
       header: "描述",
       cell: ({ row }) => (
         <span className="line-clamp-1 max-w-[300px] text-xs text-muted-foreground">
-          {row.original.description || "无描述"}
+          {cleanDescriptionSummary(row.original.description)}
         </span>
       ),
       enableSorting: false,

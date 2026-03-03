@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 const links = [
   { href: "/", label: "总览" },
-  { href: "/skills", label: "技能库" },
-  { href: "/graph", label: "图谱" },
-  { href: "/draft", label: "草稿" },
+  { href: "/tags", label: "管理" },
+  { href: "/skills", label: "浏览" },
+  { href: "/draft", label: "编排" },
 ];
 
 export function Nav() {
@@ -54,6 +55,9 @@ export function Nav() {
             </span>
             <span className="hidden xs:inline">watching</span>
           </div>
+
+          {/* Settings */}
+          <SettingsDialog />
 
           {/* Mobile hamburger button */}
           <button

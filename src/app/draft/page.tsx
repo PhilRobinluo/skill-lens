@@ -24,7 +24,7 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Search, Save, FolderOpen, Trash2, Plus, FilePlus, List, LayoutList, Layers } from "lucide-react";
+import { Search, Save, FolderOpen, Trash2, Plus, FilePlus, List, LayoutList, Layers, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +40,10 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { ErrorMessage } from "@/components/error-message";
 import { SkillDetailSheet } from "@/components/skill-detail-sheet";
 import { useAutoRefresh } from "@/hooks/use-sse";
-import type { SkillEntry } from "@/lib/types";
+import { AIFlowDialog } from "@/components/ai-flow-dialog";
+import { useSettings } from "@/hooks/use-settings";
+import type { SkillEntry, FlowGenerationResponse } from "@/lib/types";
+import { skillDisplayName } from "@/lib/utils";
 
 // ── Types ──
 
@@ -69,7 +72,6 @@ interface DraftSave {
   savedAt: string;
 }
 
-const LS_DRAFTS_KEY = "skill-manager-drafts";
 const LS_CURRENT_KEY = "skill-manager-draft-current";
 
 // ── Custom Node ──
@@ -193,7 +195,7 @@ function SidebarGroup({
               onDragStart={(e) => onDragStart(e, item)}
               className="flex items-center gap-2 px-2 py-1 cursor-grab active:cursor-grabbing hover:bg-accent/30 transition-colors"
             >
-              <span className="text-xs truncate flex-1">{item.name}</span>
+              <span className="text-xs truncate flex-1">{skillDisplayName(item.name)}</span>
               <button
                 type="button"
                 onClick={() => onAdd(item)}
@@ -242,12 +244,17 @@ function DraftPageInner() {
   const [detailSkill, setDetailSkill] = useState<SkillEntry | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  // AI flow dialog
+  const [aiFlowOpen, setAiFlowOpen] = useState(false);
+  const { status: settingsStatus } = useSettings();
+
   const openSkillDetail = useCallback(async (skillName: string) => {
     try {
       const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}`);
       if (!res.ok) return;
       const data = await res.json();
-      setDetailSkill(data.skill as SkillEntry);
+      // API returns skill object directly (not wrapped)
+      setDetailSkill(data as SkillEntry);
       setDetailOpen(true);
     } catch { /* ignore */ }
   }, []);
@@ -274,30 +281,75 @@ function DraftPageInner() {
   useEffect(() => { fetchSources(); }, [fetchSources]);
   useAutoRefresh(fetchSources);
 
-  // ── Load saves from localStorage ──
+  // ── Load saves from server (with localStorage migration) ──
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_DRAFTS_KEY);
-      if (raw) setSaves(JSON.parse(raw));
+    async function loadDrafts() {
+      try {
+        const res = await fetch("/api/drafts");
+        if (res.ok) {
+          const data = await res.json();
+          const serverDrafts = data.drafts as DraftSave[];
 
-      const current = localStorage.getItem(LS_CURRENT_KEY);
-      if (current) {
-        const parsed = JSON.parse(current) as DraftSave;
-        setNodes(parsed.nodes);
-        setEdges(parsed.edges);
-        setCurrentName(parsed.name);
-      }
-    } catch { /* ignore */ }
+          // Migrate from localStorage if server has no drafts
+          if (serverDrafts.length === 0) {
+            const lsRaw = localStorage.getItem("skill-manager-drafts");
+            if (lsRaw) {
+              const lsDrafts = JSON.parse(lsRaw) as DraftSave[];
+              for (const d of lsDrafts) {
+                await fetch("/api/drafts", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(d),
+                });
+              }
+              localStorage.removeItem("skill-manager-drafts");
+              // Re-fetch after migration
+              const res2 = await fetch("/api/drafts");
+              if (res2.ok) {
+                const data2 = await res2.json();
+                setSaves(data2.drafts as DraftSave[]);
+              }
+            }
+          } else {
+            setSaves(serverDrafts);
+          }
+        }
+      } catch { /* ignore, fall through to localStorage recovery */ }
+
+      // Crash recovery: restore current editing state from localStorage
+      try {
+        const current = localStorage.getItem(LS_CURRENT_KEY);
+        if (current) {
+          const parsed = JSON.parse(current) as DraftSave;
+          setNodes(parsed.nodes);
+          setEdges(parsed.edges);
+          setCurrentName(parsed.name);
+        }
+      } catch { /* ignore */ }
+    }
+
+    loadDrafts();
   }, [setNodes, setEdges]);
 
-  // ── Auto-save current state ──
+  // ── Auto-save current state (localStorage for crash recovery + server debounced) ──
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (nodes.length === 0 && edges.length === 0) return;
       const save: DraftSave = { name: currentName, nodes, edges, savedAt: new Date().toISOString() };
+      // Fast local cache for crash recovery
       localStorage.setItem(LS_CURRENT_KEY, JSON.stringify(save));
+      // Debounced server persist
+      fetch("/api/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(save),
+      }).then((res) => {
+        if (res.ok) return res.json();
+      }).then((data) => {
+        if (data?.drafts) setSaves(data.drafts);
+      }).catch(() => { /* silent — localStorage is the safety net */ });
     }, 1000);
     return () => clearTimeout(timer);
   }, [nodes, edges, currentName]);
@@ -354,7 +406,7 @@ function DraftPageInner() {
       id: `skill-${item.name}-${Date.now()}`,
       type: "skill",
       position: { x: 80 + col * 280, y: 80 + row * 140 },
-      data: { label: item.name, source: item.source, description: item.description },
+      data: { label: skillDisplayName(item.name), source: item.source, description: item.description },
     };
     setNodes((nds) => [...nds, newNode]);
   }
@@ -405,7 +457,7 @@ function DraftPageInner() {
         id: `skill-${item.name}-${Date.now()}`,
         type: "skill",
         position,
-        data: { label: item.name, source: item.source, description: item.description },
+        data: { label: skillDisplayName(item.name), source: item.source, description: item.description },
       };
       setNodes((nds) => [...nds, newNode]);
     },
@@ -416,10 +468,20 @@ function DraftPageInner() {
 
   function saveDraft() {
     const save: DraftSave = { name: currentName, nodes, edges, savedAt: new Date().toISOString() };
+    // Optimistic local update
     const updated = [save, ...saves.filter((s) => s.name !== currentName)].slice(0, 20);
     setSaves(updated);
-    localStorage.setItem(LS_DRAFTS_KEY, JSON.stringify(updated));
     localStorage.setItem(LS_CURRENT_KEY, JSON.stringify(save));
+    // Persist to server
+    fetch("/api/drafts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(save),
+    }).then((res) => {
+      if (res.ok) return res.json();
+    }).then((data) => {
+      if (data?.drafts) setSaves(data.drafts);
+    }).catch(() => {});
   }
 
   function loadDraft(save: DraftSave) {
@@ -429,16 +491,59 @@ function DraftPageInner() {
     localStorage.setItem(LS_CURRENT_KEY, JSON.stringify(save));
   }
 
-  function deleteDraft(name: string) {
-    const updated = saves.filter((s) => s.name !== name);
-    setSaves(updated);
-    localStorage.setItem(LS_DRAFTS_KEY, JSON.stringify(updated));
+  function removeDraft(name: string) {
+    // Optimistic local update
+    setSaves((prev) => prev.filter((s) => s.name !== name));
+    // Persist to server
+    fetch(`/api/drafts?name=${encodeURIComponent(name)}`, { method: "DELETE" })
+      .then((res) => {
+        if (res.ok) return res.json();
+      })
+      .then((data) => {
+        if (data?.drafts) setSaves(data.drafts);
+      })
+      .catch(() => {});
   }
 
   function clearCanvas() {
     setNodes([]);
     setEdges([]);
     localStorage.removeItem(LS_CURRENT_KEY);
+  }
+
+  function handleAiFlowGenerated(response: FlowGenerationResponse) {
+    const newNodes: Node[] = response.nodes.map((n) => ({
+      id: `skill-${n.skillName}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type: "skill",
+      position: { x: n.x, y: n.y },
+      data: {
+        label: skillDisplayName(n.skillName),
+        source: skillItems.find((s) => s.name === n.skillName)?.source ?? "self-built",
+        description: n.label,
+      },
+    }));
+
+    // Build a map from skillName to node id for edge connections
+    const nameToId = new Map<string, string>();
+    for (let i = 0; i < response.nodes.length; i++) {
+      nameToId.set(response.nodes[i].skillName, newNodes[i].id);
+    }
+
+    const newEdges: Edge[] = response.edges
+      .filter((e) => nameToId.has(e.source) && nameToId.has(e.target))
+      .map((e) => ({
+        id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        source: nameToId.get(e.source)!,
+        target: nameToId.get(e.target)!,
+        type: "smoothstep",
+        animated: true,
+        label: e.label,
+        markerEnd: { type: MarkerType.ArrowClosed },
+      }));
+
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setCurrentName(response.summary || "AI 生成的流程");
   }
 
   const newDraftCounter = useRef(1);
@@ -457,7 +562,14 @@ function DraftPageInner() {
   if (error && skillItems.length === 0) return <ErrorMessage message={error} onRetry={fetchSources} />;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+      {/* Page description */}
+      <div className="border-b px-4 py-2">
+        <h1 className="text-lg font-bold tracking-tight">编排</h1>
+        <p className="text-xs text-muted-foreground">拖拽技能到画布，连线组合工作流，保存为草稿方案</p>
+      </div>
+
+      <div className="flex flex-1 min-h-0">
       {/* ── Sidebar ── */}
       <aside className="w-[280px] shrink-0 border-r bg-background/70 flex flex-col">
         <div className="p-3 space-y-2 border-b">
@@ -508,7 +620,7 @@ function DraftPageInner() {
               className="flex items-start gap-2 rounded-md border bg-card px-2 py-1.5 cursor-grab active:cursor-grabbing hover:bg-accent/50 transition-colors"
             >
               <div className="flex-1 min-w-0" onClick={() => openSkillDetail(item.name)} role="button" tabIndex={0} onKeyDown={() => {}}>
-                <p className="text-xs font-medium truncate cursor-pointer hover:underline">{item.name}</p>
+                <p className="text-xs font-medium truncate cursor-pointer hover:underline">{skillDisplayName(item.name)}</p>
                 <p className="text-[10px] text-muted-foreground line-clamp-1">{item.description || "无描述"}</p>
               </div>
               <button
@@ -532,7 +644,7 @@ function DraftPageInner() {
                 className="flex flex-col gap-1 rounded-md border bg-card px-2 py-1.5 cursor-grab active:cursor-grabbing hover:bg-accent/50 transition-colors"
               >
                 <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-medium truncate flex-1 cursor-pointer hover:underline" onClick={() => openSkillDetail(item.name)}>{item.name}</p>
+                  <p className="text-xs font-medium truncate flex-1 cursor-pointer hover:underline" onClick={() => openSkillDetail(item.name)}>{skillDisplayName(item.name)}</p>
                   <button
                     type="button"
                     onClick={() => addSkillToCanvas(item)}
@@ -659,7 +771,7 @@ function DraftPageInner() {
                       <button
                         type="button"
                         className="shrink-0 p-1 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); deleteDraft(s.name); }}
+                        onClick={(e) => { e.stopPropagation(); removeDraft(s.name); }}
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -671,6 +783,16 @@ function DraftPageInner() {
           </Panel>
 
           <Panel position="top-right" className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1"
+              onClick={() => setAiFlowOpen(true)}
+              disabled={!settingsStatus?.hasApiKey}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              AI 生成
+            </Button>
             <Button size="sm" variant="outline" className="h-8 gap-1" onClick={addGroup}>
               <Plus className="h-3.5 w-3.5" />
               分组
@@ -701,6 +823,15 @@ function DraftPageInner() {
         onOpenChange={setDetailOpen}
         onUpdated={fetchSources}
       />
+
+      {/* AI Flow Dialog */}
+      <AIFlowDialog
+        open={aiFlowOpen}
+        onOpenChange={setAiFlowOpen}
+        hasApiKey={settingsStatus?.hasApiKey ?? false}
+        onGenerated={handleAiFlowGenerated}
+      />
+      </div>
     </div>
   );
 }

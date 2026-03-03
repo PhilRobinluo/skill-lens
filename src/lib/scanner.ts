@@ -144,6 +144,7 @@ async function scanPluginsCache(
     const skillEntry = await buildSkillEntry(name, skillDir, skillMdPath);
     // Use a composite key for plugin skills to avoid name collisions
     const key = skillEntry.source === "self-built" ? name : `${skillEntry.source}/${name}`;
+    skillEntry.name = key; // name must equal registry key for API lookups
     skills[key] = skillEntry;
   }
 }
@@ -258,7 +259,8 @@ export function autoInferTags(skill: SkillEntry): string[] {
   }
 
   // Priority 2: Name prefix → domain tag
-  const name = skill.name;
+  // Strip source prefix (e.g. "plugin-official/deploy" → "deploy") for pattern matching
+  const name = skill.name.replace(/^(?:plugin-official|plugin-community)\//, "");
 
   if (name.startsWith("baoyu-")) {
     if (BAOYU_IMAGE_SKILLS.has(name)) return ["图像/生成"];
@@ -285,8 +287,8 @@ export function autoInferTags(skill: SkillEntry): string[] {
   if (/笔记|Obsidian|仓库/.test(desc)) return ["笔记"];
   if (/任务|task|待办/.test(desc)) return ["任务"];
 
-  // Priority 4: Fallback
-  return ["未分类"];
+  // Priority 4: No match — return empty (UI shows "未分类" virtually)
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -332,6 +334,9 @@ export async function scanAll(
 
   // Auto-infer domain tags for skills that have no manual tags
   for (const skill of Object.values(skills)) {
+    // Clean up legacy "未分类" stored as real tag
+    skill.tags.domain = skill.tags.domain.filter((d) => d !== "未分类");
+
     if (skill.tags.domain.length === 0) {
       skill.tags.domain = autoInferTags(skill);
       skill.tags.autoTagged = true;

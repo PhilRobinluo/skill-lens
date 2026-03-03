@@ -77,6 +77,59 @@ export interface FilterState {
   logic: FilterLogic;
 }
 
+// ---------- Settings ----------
+
+export interface AppSettings {
+  openRouterApiKey: string;
+  aiModel: string;
+}
+
+export interface SettingsStatus {
+  hasApiKey: boolean;
+  aiModel: string;
+}
+
+// ---------- AI: Health Report ----------
+
+export interface HealthReportResponse {
+  report: string;
+  generatedAt: string;
+}
+
+// ---------- AI: Auto Tagging ----------
+
+export interface TagSuggestion {
+  skillName: string;
+  suggestedDomains: string[];
+  confidence: "high" | "medium" | "low";
+  reason: string;
+}
+
+export interface AutoTagResponse {
+  suggestions: TagSuggestion[];
+}
+
+// ---------- AI: Flow Generation ----------
+
+export interface GeneratedFlowNode {
+  skillName: string;
+  label: string;
+  x: number;
+  y: number;
+}
+
+export interface GeneratedFlowEdge {
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface FlowGenerationResponse {
+  nodes: GeneratedFlowNode[];
+  edges: GeneratedFlowEdge[];
+  summary: string;
+}
+
 // ---------- Dashboard ----------
 
 export interface DashboardStats {

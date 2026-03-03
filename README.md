@@ -8,29 +8,30 @@
 >
 > 技能透镜就是为了回答这些问题而生的。
 
-<!-- TODO: 替换为实际截图 -->
-![dashboard](docs/screenshots/dashboard.gif)
+![dashboard](docs/screenshots/dashboard-overview.gif)
 
 ---
 
 ## 为什么需要它
 
-当你把越来越多的能力封装成 Skills，技能库会不可避免地膨胀。超过 50 个之后，你会开始遇到这些问题：
+使用 Skill 的感觉会越来越熟练。慢慢地你会形成一种意识：**把所有能力都封装成 Skill，放到 AI 里去用** — 自己的经验、别人的最佳实践、学到的方法论，统统封装进去。
+
+但当技能库膨胀到 50 个以上，问题来了：
 
 - **认知失控** — 不记得哪个 Skill 干什么，打标签的比没打的少
 - **重复建设** — 新写了一个 Skill，后来发现原来已经有类似的
 - **路由断裂** — CLAUDE.md 里引用了 Skill 名，但文件已经改名或删除
 - **编排困难** — 想把几个 Skill 组合成工作流，却没有全局视角
 
-技能透镜不是又一个管理工具，它是你的 **Skill 仪表盘** — 像 macOS 的活动监视器一样，让你对整个技能库一目了然。
+技能透镜不是又一个管理工具，它是你的 **Skill 仪表盘** — 像 macOS 的活动监视器一样，让你对整个技能库一目了然。增强你的认知能力，让你真正掌控自己的 AI 能力体系。
 
 ---
 
-## 核心原则：只读安全（Zero-Touch）
+## 核心原则：只读安全
 
 **技能透镜永远不会修改你的 Skill 文件。**
 
-这是最重要的设计原则，没有之一。你的 Skills 是你的核心资产，任何工具都不应该在未经许可的情况下碰它们。
+这是最重要的设计原则。你的 Skills 是你的核心资产，任何工具都不应该在未经许可的情况下碰它们。
 
 ```
 你的 Skills 文件                    技能透镜
@@ -42,15 +43,6 @@
        永远不碰 ✋                       独立数据文件
 ```
 
-具体来说：
-
-| 操作 | 读取了什么 | 写入了什么 |
-|------|-----------|-----------|
-| 启动扫描 | `~/.claude/skills/` 下所有 SKILL.md（只读） | `data/skills-registry.json` |
-| 解析路由 | `~/.claude/CLAUDE.md`（只读） | — |
-| 频率统计 | `~/.claude/projects/` 下的 .jsonl 日志（只读） | `data/skill-frequency-cache.json` |
-| 编辑标签/备注 | — | `data/skills-registry.json` |
-
 **你可以随时删除整个技能透镜文件夹，你的 Skills 纹丝不动。**
 
 ---
@@ -58,55 +50,106 @@
 ## 30 秒安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/arthurai-cai/skill-lens/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/anthropics-skills/skill-lens/main/install.sh | bash
 ```
 
 脚本会自动：
 1. 检查依赖（Node.js 18+、pnpm）
 2. 克隆到 `~/.claude/skill-lens/`
 3. 安装依赖
-4. 创建 macOS Dock 启动器（macOS）
+4. 创建 macOS Dock 启动器
 5. 启动仪表盘并打开浏览器
-
-没有 Claude Code？也能跑：
-```bash
-DEMO=1 pnpm dev  # 加载示例数据，体验完整功能
-```
 
 ---
 
 ## 功能一览
 
-### 总览仪表盘
+### 1. 总览仪表盘
 
 一眼看清全局：技能总数、路由状态、领域分布、来源构成、最近修改。
 
-<!-- TODO: 替换为实际截图 -->
-![overview](docs/screenshots/overview.gif)
+![dashboard](docs/screenshots/dashboard-overview.gif)
 
-### Notion 风格表格
+---
 
-借鉴 Notion 的多维表格设计，通过字段进行多维度管理：
+### 2. Notion 风格多维表格
 
-- **调用频率** — 自动从 Claude Code 会话日志中统计真实使用频率
-- **来源分类** — 自建 / 宝玉系列 / 官方插件 / 社区插件
-- **领域标签** — 支持行内编辑，自动推断 + 手动打标
-- **筛选 & 排序** — Notion 风格条件筛选器，多字段组合
-- **列可见性** — 按需显示/隐藏列
+这是参照 Notion 多维表格的方式设计的，非常适合用来管理 Skill。
 
-<!-- TODO: 替换为实际截图 -->
-![table](docs/screenshots/table.gif)
+![table](docs/screenshots/table-overview.png)
 
-### 3D 知识图谱
+#### 排序 — 按创建时间、修改时间一键排列
 
-用 3D 力导向图展示技能之间的关系网络。球体 = 技能，颜色 = 来源，大球 = 领域中心节点，连线 = 共享领域或显式依赖。
+![sorting](docs/screenshots/table-sorting.png)
 
-可以旋转、缩放、搜索高亮、按来源/领域过滤。点击任意节点查看详情。
+#### 多维分析 — 来源、路由状态、正文行数一目了然
 
-<!-- TODO: 替换为实际截图 -->
-![graph](docs/screenshots/graph.gif)
+- **自动分析 Skill 来源**：自建 / 宝玉系列 / 官方插件 / 社区插件
+- **自动分析 CLAUDE.md 路由状态**：哪些 Skill 在路由表中被引用，哪些是孤立的
+- **正文行数统计**：这是一个很实用的功能 — 通过行数可以判断 Skill 是否过度冗余
 
-### 草稿画布
+![analysis](docs/screenshots/table-analysis.png)
+
+#### 调用频率 — 自动统计一个月内的真实使用情况
+
+自动从 Claude Code 会话日志中统计调用次数和上次调用时间。创建出来的 Skill 到底有没有发挥价值，一看便知。
+
+![frequency](docs/screenshots/table-frequency.png)
+
+#### 筛选与排序 — Notion 风格条件筛选器
+
+支持多字段组合筛选，列可见性按需显示/隐藏。
+
+![filter](docs/screenshots/table-filter-sort.gif)
+
+---
+
+### 3. 标签系统
+
+将所有 Skill 通过标签快速整理。同一个标签下的 Skill 被梳理出来后，可以很直观地感受到：哪些是冗余的，哪些是被遗漏的，哪些可以进行流程编排。**掌控力，就是这样来的。**
+
+![tags](docs/screenshots/tags-view.png)
+
+---
+
+### 4. 3D 知识图谱
+
+用 3D 力导向图展示技能关系网络。球体 = 技能，颜色 = 来源，大球 = 领域中心节点，连线 = 共享领域。可以旋转、缩放、搜索高亮、按来源/领域过滤。增加点新鲜感。
+
+![graph-rotate](docs/screenshots/graph-3d-rotate.gif)
+
+![graph-explore](docs/screenshots/graph-3d-explore.gif)
+
+---
+
+### 5. 更多视图
+
+除了表格，还有卡片视图和分组视图，视图偏好自动记住。
+
+**卡片视图**
+
+![card](docs/screenshots/view-card.png)
+
+**分组视图** — 按领域折叠展开
+
+![grouped](docs/screenshots/view-grouped.gif)
+
+---
+
+### 6. Skill 详情面板
+
+每个 Skill 的 description 经过数据清洗，排版更清晰，方便观看。我们自己能看得懂，AI 才能看得懂。
+
+- CLAUDE.md 路由引用情况
+- 领域标签编辑（带自动补全）
+- 备注功能（不影响原文件）
+- SKILL.md 原文查看
+
+![detail](docs/screenshots/skill-detail.png)
+
+---
+
+### 7. 草稿画布
 
 自由拖拽 Skills 到画布上，连线、分组、编排。适合在规划工作流或重组技能体系时使用。
 
@@ -115,12 +158,51 @@ DEMO=1 pnpm dev  # 加载示例数据，体验完整功能
 - 分组节点（可缩放、可重命名）
 - 多份草稿保存/切换
 
-<!-- TODO: 替换为实际截图 -->
-![draft](docs/screenshots/draft.gif)
+---
 
-### 更多视图
+## AI 智能功能
 
-除了表格，还有列表视图（卡片网格）和分组视图（按领域折叠展开），视图偏好自动记住。
+接入 OpenRouter API（用户配自己的 Key），解锁三个 AI 能力：
+
+### AI 智能打标签
+
+对于几十上百个 Skill，手动打标签是不现实的。AI 可以一键分析所有未标记的 Skill，给出标签建议。
+
+![ai-tag-start](docs/screenshots/ai-tag-start.png)
+
+预览每个建议，包含置信度和理由，勾选后批量应用：
+
+![ai-tag-preview](docs/screenshots/ai-tag-preview.png)
+
+![ai-tag-applying](docs/screenshots/ai-tag-applying.png)
+
+一键打标签的结果 — 同一功能的 Skill 被自动归类到一起：
+
+![ai-tag-result](docs/screenshots/ai-tag-result.png)
+
+---
+
+### AI 工作流编排
+
+输入你要完成的任务场景，AI 自动从你的技能库中挑选相关 Skill，排布成工作流。这对理解"我现有的 Skill 能怎么组合"很有参考价值。
+
+![ai-flow-input](docs/screenshots/ai-flow-input.png)
+
+直接把你有的 Skill 排布好了：
+
+![ai-flow-result](docs/screenshots/ai-flow-result.png)
+
+---
+
+### AI 健康度报告
+
+纵览全局，打出健康分报告。从触发力、路由覆盖、标签覆盖、体量异常、功能重叠等多个维度分析你的技能库。
+
+![ai-health-1](docs/screenshots/ai-health-1.png)
+
+![ai-health-2](docs/screenshots/ai-health-2.png)
+
+![ai-health-3](docs/screenshots/ai-health-3.png)
 
 ---
 
@@ -134,6 +216,10 @@ DEMO=1 pnpm dev  # 加载示例数据，体验完整功能
 SKILL_DIRS=/path/to/skills,/another/path pnpm dev
 ```
 
+### AI 功能配置
+
+启动后点击右上角齿轮图标，填入你的 [OpenRouter](https://openrouter.ai/) API Key 即可。Key 存储在本地 `data/settings.json`（已被 .gitignore 忽略），永远不会上传。
+
 ### 所有环境变量
 
 | 变量 | 默认值 | 说明 |
@@ -142,7 +228,6 @@ SKILL_DIRS=/path/to/skills,/another/path pnpm dev
 | `PLUGINS_CACHE_DIR` | `~/.claude/plugins/cache` | 插件缓存目录 |
 | `CLAUDE_MD_PATH` | `~/.claude/CLAUDE.md` | CLAUDE.md 路径 |
 | `PROJECTS_DIR` | `~/.claude/projects` | 会话日志目录（频率统计用） |
-| `DEMO` | — | 设为 `1` 启用 Demo 模式 |
 
 ---
 
@@ -157,6 +242,7 @@ SKILL_DIRS=/path/to/skills,/another/path pnpm dev
 | 画布 | @xyflow/react (React Flow) |
 | 3D 图谱 | react-force-graph-3d + Three.js |
 | 图表 | recharts |
+| AI | OpenAI SDK + OpenRouter |
 | 文件监控 | chokidar |
 
 ---
@@ -167,40 +253,28 @@ SKILL_DIRS=/path/to/skills,/another/path pnpm dev
 
 ### 可以贡献什么
 
-- **新视图** — 还有什么角度能帮助理解技能库？Timeline？依赖树？使用热力图？
-- **智能分析** — 自动检测重复 Skill、未路由 Skill、描述缺失等"健康度"指标
-- **导入/导出** — 支持从其他工具导入 Skill 元数据，或导出为 CLAUDE.md 片段
+- **新视图** — Timeline？依赖树？使用热力图？
+- **智能分析** — 自动检测重复 Skill、描述缺失等健康度指标
+- **导入/导出** — 导出为 CLAUDE.md 路由表片段
 - **多语言** — 目前 UI 是中文，欢迎贡献 i18n
-- **Bug 修复 & 优化** — 总有改进空间
-
-### 贡献流程
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/your-feature`)
-3. 提交更改 (`git commit -m 'Add your feature'`)
-4. 推送到分支 (`git push origin feature/your-feature`)
-5. 创建 Pull Request
 
 ### 开发指南
 
 ```bash
-git clone https://github.com/arthurai-cai/skill-lens.git
+git clone https://github.com/anthropics-skills/skill-lens.git
 cd skill-lens
 pnpm install
-pnpm dev       # 启动开发服务器 http://localhost:3000
-pnpm test      # 运行测试
+pnpm dev       # http://localhost:3000
 pnpm build     # 类型检查 + 构建
 ```
-
-项目结构清晰：`src/app/` 是页面，`src/components/` 是组件，`src/lib/` 是核心逻辑。新增页面只需在 `src/app/` 下建目录，然后在 `src/components/nav.tsx` 加导航链接。
 
 ---
 
 ## Roadmap
 
-- [ ] Demo 模式完善 — 无需真实 Skills 也能完整体验
-- [ ] Skill 健康度评分 — 描述完整性、路由状态、行数合理性
-- [ ] 草稿导出为 CLAUDE.md 路由表片段
+- [ ] Agent Team 项目级 Skill 管理
+- [ ] CLAUDE.md 路由表可视化编辑
+- [ ] 更多维关系自动梳理
 - [ ] 批量操作 — 批量打标签、批量修改领域
 - [ ] 插件系统 — 自定义分析维度
 

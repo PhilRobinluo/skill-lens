@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -19,10 +20,26 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { useAutoRefresh } from "@/hooks/use-sse";
 import type { SkillEntry } from "@/lib/types";
 import type { SkillCallStats } from "@/lib/frequency-scanner";
+import { skillDisplayName } from "@/lib/utils";
 
-type ViewMode = "table" | "list" | "grouped";
+const SkillGraph3D = dynamic(
+  () => import("@/components/skill-graph-3d").then((mod) => mod.SkillGraph3D),
+  {
+    ssr: false,
+    loading: () => <LoadingSpinner text="Loading 3D graph..." />,
+  },
+);
+
+type ViewMode = "table" | "card" | "grouped" | "graph";
 
 const LS_VIEW_MODE = "skills-view-mode";
+
+/** Map legacy localStorage value to new ViewMode */
+function resolveViewMode(raw: string | null): ViewMode {
+  if (raw === "list") return "card";
+  if (raw === "table" || raw === "card" || raw === "grouped" || raw === "graph") return raw;
+  return "table";
+}
 
 const SOURCE_OPTIONS = [
   { value: "all", label: "全部来源" },
@@ -96,6 +113,13 @@ function groupSkillsByDomain(skills: SkillEntry[]): SkillGroup[] {
   return groups;
 }
 
+const VIEW_MODES: { mode: ViewMode; label: string }[] = [
+  { mode: "table", label: "多维表格" },
+  { mode: "card", label: "卡片" },
+  { mode: "grouped", label: "分组" },
+  { mode: "graph", label: "图谱" },
+];
+
 function SkillsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -108,7 +132,7 @@ function SkillsPageInner() {
   const [callStatsMap, setCallStatsMap] = useState<Record<string, SkillCallStats>>({});
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "table";
-    return (localStorage.getItem(LS_VIEW_MODE) as ViewMode) || "table";
+    return resolveViewMode(localStorage.getItem(LS_VIEW_MODE));
   });
 
   // Filters from URL
@@ -195,70 +219,24 @@ function SkillsPageInner() {
 
   const groups = useMemo(() => groupSkillsByDomain(skills), [skills]);
 
+  const isGraphView = viewMode === "graph";
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+      {/* Header — always consistent */}
+      <div className="mx-auto w-full max-w-7xl space-y-4 px-6 pt-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">技能库</h1>
+          <h1 className="text-2xl font-bold tracking-tight">浏览</h1>
           <p className="text-sm text-muted-foreground">
-            {loading ? "加载中..." : `共 ${total} 个技能`}
+            {loading ? "加载中..." : `${total} 个技能 — 多视图浏览、搜索、筛选，点击查看详情`}
           </p>
         </div>
-      </div>
 
-      {/* View Toggle + Legacy Filters (for list/grouped) */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* Legacy filters only for list/grouped views */}
-        {viewMode !== "table" && (
-          <>
-            <Input
-              placeholder="搜索技能..."
-              value={q}
-              onChange={(e) => updateParam("q", e.target.value)}
-              className="h-9 sm:max-w-xs"
-            />
-
-            <Select
-              value={source}
-              onValueChange={(val) => updateParam("source", val)}
-            >
-              <SelectTrigger className="h-9 w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SOURCE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={claudeStatus}
-              onValueChange={(val) => updateParam("status", val)}
-            >
-              <SelectTrigger className="h-9 w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CLAUDE_STATUS_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </>
-        )}
-
-        {/* View mode toggle — 3 options */}
-        <div className={`flex items-center rounded-md border ${viewMode === "table" ? "" : "ml-auto"}`}>
-          {(["table", "list", "grouped"] as const).map((mode, i) => {
-            const labels = { table: "表格", list: "列表", grouped: "分组" };
+        {/* View mode toggle — always visible, single row */}
+        <div className="flex items-center rounded-md border w-fit">
+          {VIEW_MODES.map(({ mode, label }, i) => {
             const isFirst = i === 0;
-            const isLast = i === 2;
+            const isLast = i === VIEW_MODES.length - 1;
             return (
               <button
                 key={mode}
@@ -273,72 +251,131 @@ function SkillsPageInner() {
                   localStorage.setItem(LS_VIEW_MODE, mode);
                 }}
               >
-                {labels[mode]}
+                {label}
               </button>
             );
           })}
         </div>
+
+        {/* Filters — only for card/grouped views (table has its own toolbar) */}
+        {(viewMode === "card" || viewMode === "grouped") && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            placeholder="搜索技能..."
+            value={q}
+            onChange={(e) => updateParam("q", e.target.value)}
+            className="h-9 sm:max-w-xs"
+          />
+
+          <Select
+            value={source}
+            onValueChange={(val) => updateParam("source", val)}
+          >
+            <SelectTrigger className="h-9 w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SOURCE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={claudeStatus}
+            onValueChange={(val) => updateParam("status", val)}
+          >
+            <SelectTrigger className="h-9 w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CLAUDE_STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          </div>
+        )}
       </div>
 
-      {/* Error */}
+      {/* Content area — scrollable or full-height depending on view */}
       {error && (
-        <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          <span className="flex-1">{error}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setError(null);
-              setLoading(true);
-              fetchSkills();
-            }}
-          >
-            重试
-          </Button>
+        <div className="mx-auto w-full max-w-7xl px-6 pt-4">
+          <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <span className="flex-1">{error}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                fetchSkills();
+              }}
+            >
+              重试
+            </Button>
+          </div>
         </div>
       )}
 
       {/* Empty state */}
-      {!loading && skills.length === 0 && !error && (
+      {!loading && skills.length === 0 && !error && !isGraphView && (
         <div className="flex h-40 items-center justify-center text-muted-foreground">
           没有匹配当前筛选条件的技能
         </div>
       )}
 
-      {/* Table View */}
-      {viewMode === "table" && (
-        <SkillsTable
-          skills={skills}
-          allDomains={allDomains}
-          onNameClick={handleCardClick}
-          onUpdated={handleSheetUpdated}
-          callStatsMap={callStatsMap}
-        />
-      )}
-
-      {/* List View (card grid) */}
-      {viewMode === "list" && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {skills.map((skill, index) => (
-            <SkillCard
-              key={`${skill.name}-${skill.source}-${index}`}
-              skill={skill}
-              onClick={() => handleCardClick(skill)}
+      {/* Table / Card / Grouped — constrained width with padding */}
+      {!isGraphView && (
+        <div className="mx-auto w-full max-w-7xl flex-1 overflow-y-auto space-y-6 px-6 pb-6 pt-2">
+          {viewMode === "table" && (
+            <SkillsTable
+              skills={skills}
+              allDomains={allDomains}
+              onNameClick={handleCardClick}
+              onUpdated={handleSheetUpdated}
+              callStatsMap={callStatsMap}
             />
-          ))}
+          )}
+
+          {viewMode === "card" && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {skills.map((skill, index) => (
+                <SkillCard
+                  key={`${skill.name}-${skill.source}-${index}`}
+                  skill={skill}
+                  onClick={() => handleCardClick(skill)}
+                />
+              ))}
+            </div>
+          )}
+
+          {viewMode === "grouped" && (
+            <div className="space-y-2">
+              {groups.map((group) => (
+                <GroupSection
+                  key={group.domain}
+                  group={group}
+                  onSkillClick={handleCardClick}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Grouped View */}
-      {viewMode === "grouped" && (
-        <div className="space-y-2">
-          {groups.map((group) => (
-            <GroupSection
-              key={group.domain}
-              group={group}
-              onSkillClick={handleCardClick}
-            />
-          ))}
+      {/* Graph View — full remaining height */}
+      {isGraphView && (
+        <div className="flex-1 min-h-0">
+          <SkillGraph3D
+            skills={skills}
+            allSkillNames={allSkillNames}
+            onUpdated={fetchSkills}
+          />
         </div>
       )}
 
@@ -398,7 +435,7 @@ function GroupSection({
                 onClick={() => onSkillClick(skill)}
               >
                 <span className="shrink-0 w-[240px] truncate font-mono text-sm">
-                  {skill.name}
+                  {skillDisplayName(skill.name)}
                 </span>
                 <Badge
                   variant="outline"

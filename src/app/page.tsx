@@ -23,7 +23,10 @@ import {
 import { useAutoRefresh } from "@/hooks/use-sse";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { ErrorMessage } from "@/components/error-message";
+import { HealthReportCard } from "@/components/health-report-card";
+import { useSettings } from "@/hooks/use-settings";
 import type { DashboardStats } from "@/lib/types";
+import { skillDisplayName } from "@/lib/utils";
 
 const PIE_COLORS = [
   "#6366f1", // indigo
@@ -61,6 +64,7 @@ function formatRelativeTime(dateStr: string): string {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { status: settingsStatus } = useSettings();
 
   const fetchStats = useCallback(async () => {
     try {
@@ -103,6 +107,12 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">总览</h1>
+        <p className="text-sm text-muted-foreground">技能生态全局视图 — 数量、分布、健康度一目了然</p>
+      </div>
+
       {/* Row 1: Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -233,6 +243,9 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Row 2.5: AI Health Report */}
+      <HealthReportCard hasApiKey={settingsStatus?.hasApiKey ?? false} />
+
       {/* Row 3: Recent Changes */}
       <Card>
         <CardHeader>
@@ -257,7 +270,7 @@ export default function DashboardPage() {
                     className="border-b last:border-0"
                   >
                     <td className="py-2.5 font-mono text-sm">
-                      {change.name}
+                      {skillDisplayName(change.name)}
                     </td>
                     <td className="py-2.5 text-right text-muted-foreground">
                       {formatRelativeTime(change.lastModified)}

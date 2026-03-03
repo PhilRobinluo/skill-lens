@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cleanDescriptionSummary, skillDisplayName } from "@/lib/utils";
 import type { SkillEntry } from "@/lib/types";
 
 interface SkillCardProps {
@@ -42,6 +44,17 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
   };
   const isRouted = skill.claudeMdRefs.length > 0;
 
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const [isClamped, setIsClamped] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (el) {
+      setIsClamped(el.scrollHeight > el.clientHeight);
+    }
+  }, [skill.description]);
+
   return (
     <Card
       className="cursor-pointer transition-colors hover:bg-accent/50"
@@ -50,7 +63,7 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-sm font-semibold leading-tight">
-            {skill.name}
+            {skillDisplayName(skill.name)}
           </CardTitle>
           <span
             className="shrink-0 text-base"
@@ -66,9 +79,24 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Description */}
-        <p className="line-clamp-2 text-xs text-muted-foreground">
-          {skill.description || "No description"}
+        <p
+          ref={descRef}
+          className={`text-xs text-muted-foreground ${expanded ? "" : "line-clamp-3"}`}
+        >
+          {cleanDescriptionSummary(skill.description)}
         </p>
+        {isClamped && (
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+          >
+            {expanded ? "收起" : "展开"}
+          </button>
+        )}
 
         {/* Badges row */}
         <div className="flex flex-wrap items-center gap-1.5">

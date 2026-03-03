@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import Markdown from "react-markdown";
 import { useSkillMutations } from "@/hooks/use-skill-mutations";
+import { cleanDescriptionFull, skillDisplayName } from "@/lib/utils";
 import type { SkillEntry } from "@/lib/types";
 
 interface SkillDetailSheetProps {
@@ -54,7 +56,7 @@ export function SkillDetailSheet({
   // Sync from prop
   useEffect(() => {
     if (skill) {
-      setDomains(skill.tags.domain);
+      setDomains(skill.tags.domain.filter((d) => d !== "未分类"));
       setNotes(skill.notes);
       setDomainInput("");
       setRawContent(null);
@@ -149,7 +151,7 @@ export function SkillDetailSheet({
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-lg">
-            {skill.name}
+            {skillDisplayName(skill.name)}
             {isRouted ? (
               <span className="text-green-600 dark:text-green-400" title="Routed">
                 &#10003;
@@ -160,7 +162,11 @@ export function SkillDetailSheet({
               </span>
             )}
           </SheetTitle>
-          <SheetDescription>{skill.description || "No description"}</SheetDescription>
+          <SheetDescription asChild>
+            <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground">
+              <Markdown>{cleanDescriptionFull(skill.description) || "无描述"}</Markdown>
+            </div>
+          </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 px-4 pb-8">
@@ -195,37 +201,39 @@ export function SkillDetailSheet({
             </div>
           </section>
 
-          {/* CLAUDE.md References */}
-          {skill.claudeMdRefs.length > 0 && (
-            <>
-              <Separator />
-              <section className="space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground">
-                  CLAUDE.md References
-                </h3>
-                <div className="overflow-x-auto rounded-md border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/40">
-                        <th className="px-3 py-1.5 text-left font-medium">Table</th>
-                        <th className="px-3 py-1.5 text-left font-medium">Trigger</th>
+          {/* CLAUDE.md References — always visible */}
+          <Separator />
+          <section className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">
+              CLAUDE.md 路由
+            </h3>
+            {skill.claudeMdRefs.length > 0 ? (
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/40">
+                      <th className="px-3 py-1.5 text-left font-medium">路由表</th>
+                      <th className="px-3 py-1.5 text-left font-medium">触发词</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {skill.claudeMdRefs.map((ref, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="px-3 py-1.5">{ref.table}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">
+                          {ref.trigger}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {skill.claudeMdRefs.map((ref, i) => (
-                        <tr key={i} className="border-b last:border-0">
-                          <td className="px-3 py-1.5">{ref.table}</td>
-                          <td className="px-3 py-1.5 text-muted-foreground">
-                            {ref.trigger}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </>
-          )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground/60 italic">
+                未被 CLAUDE.md 路由表引用
+              </p>
+            )}
+          </section>
 
           <Separator />
 
