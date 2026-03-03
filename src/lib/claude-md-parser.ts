@@ -63,6 +63,12 @@ function extractSkillNames(cell: string): string[] {
   return matches.map((m) => m.slice(1, -1));
 }
 
+export interface ClaudeMdRouteRow {
+  table: string;
+  trigger: string;
+  skills: string[];
+}
+
 /**
  * Parse CLAUDE.md content and extract skill routing references.
  *
@@ -129,4 +135,37 @@ export function parseClaudeMd(
   }
 
   return result;
+}
+
+export function parseClaudeMdRouteRows(content: string): ClaudeMdRouteRow[] {
+  if (!content.trim()) return [];
+
+  const rows: ClaudeMdRouteRow[] = [];
+  const lines = content.split("\n");
+  let currentTable: string | null = null;
+
+  for (const line of lines) {
+    if (line.startsWith("## ")) {
+      currentTable = isRoutingHeader(line) ? extractTableName(line) : null;
+      continue;
+    }
+
+    if (!currentTable || !line.startsWith("|")) continue;
+
+    const cells = line.split("|").map((c) => c.trim());
+    if (cells.length < 4) continue;
+
+    const skillCell = cells[2];
+    if (!skillCell || skillCell.includes("---") || skillCell.includes("调用的")) {
+      continue;
+    }
+
+    const skills = extractSkillNames(skillCell);
+    const trigger = cells[3]?.trim() ?? "";
+
+    if (skills.length === 0 || trigger.length === 0) continue;
+    rows.push({ table: currentTable, trigger, skills });
+  }
+
+  return rows;
 }

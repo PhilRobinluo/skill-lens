@@ -14,11 +14,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillCard } from "@/components/skill-card";
 import { SkillDetailSheet } from "@/components/skill-detail-sheet";
+import { SkillsTable } from "@/components/skills-table/skills-table";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useAutoRefresh } from "@/hooks/use-sse";
 import type { SkillEntry } from "@/lib/types";
+import type { SkillCallStats } from "@/lib/frequency-scanner";
 
-type ViewMode = "list" | "grouped";
+type ViewMode = "table" | "list" | "grouped";
+
+const LS_VIEW_MODE = "skills-view-mode";
 
 const SOURCE_OPTIONS = [
   { value: "all", label: "全部来源" },
@@ -101,7 +105,11 @@ function SkillsPageInner() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [callStatsMap, setCallStatsMap] = useState<Record<string, SkillCallStats>>({});
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "table";
+    return (localStorage.getItem(LS_VIEW_MODE) as ViewMode) || "table";
+  });
 
   // Filters from URL
   const q = searchParams.get("q") ?? "";
@@ -111,6 +119,13 @@ function SkillsPageInner() {
   // Sheet state
   const [selectedSkill, setSelectedSkill] = useState<SkillEntry | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // All existing domain tags for suggestions
+  const allDomains = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of skills) for (const d of s.tags.domain) set.add(d);
+    return Array.from(set).sort();
+  }, [skills]);
 
   // Update URL params
   function updateParam(key: string, value: string) {
@@ -160,6 +175,13 @@ function SkillsPageInner() {
     fetchSkills();
   }, [fetchSkills]);
 
+  useEffect(() => {
+    fetch("/api/skills/frequency")
+      .then((res) => res.ok ? res.json() : {})
+      .then((data: Record<string, SkillCallStats>) => setCallStatsMap(data))
+      .catch(() => {});
+  }, []);
+
   useAutoRefresh(fetchSkills);
 
   function handleCardClick(skill: SkillEntry) {
@@ -185,71 +207,76 @@ function SkillsPageInner() {
         </div>
       </div>
 
-      {/* Filters + View Toggle */}
+      {/* View Toggle + Legacy Filters (for list/grouped) */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Input
-          placeholder="搜索技能..."
-          value={q}
-          onChange={(e) => updateParam("q", e.target.value)}
-          className="h-9 sm:max-w-xs"
-        />
+        {/* Legacy filters only for list/grouped views */}
+        {viewMode !== "table" && (
+          <>
+            <Input
+              placeholder="搜索技能..."
+              value={q}
+              onChange={(e) => updateParam("q", e.target.value)}
+              className="h-9 sm:max-w-xs"
+            />
 
-        <Select
-          value={source}
-          onValueChange={(val) => updateParam("source", val)}
-        >
-          <SelectTrigger className="h-9 w-[160px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SOURCE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select
+              value={source}
+              onValueChange={(val) => updateParam("source", val)}
+            >
+              <SelectTrigger className="h-9 w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SOURCE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <Select
-          value={claudeStatus}
-          onValueChange={(val) => updateParam("status", val)}
-        >
-          <SelectTrigger className="h-9 w-[140px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CLAUDE_STATUS_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select
+              value={claudeStatus}
+              onValueChange={(val) => updateParam("status", val)}
+            >
+              <SelectTrigger className="h-9 w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CLAUDE_STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
 
-        {/* View mode toggle */}
-        <div className="ml-auto flex items-center rounded-md border">
-          <button
-            type="button"
-            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-              viewMode === "list"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            } rounded-l-md`}
-            onClick={() => setViewMode("list")}
-          >
-            列表
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-              viewMode === "grouped"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            } rounded-r-md`}
-            onClick={() => setViewMode("grouped")}
-          >
-            分组
-          </button>
+        {/* View mode toggle — 3 options */}
+        <div className={`flex items-center rounded-md border ${viewMode === "table" ? "" : "ml-auto"}`}>
+          {(["table", "list", "grouped"] as const).map((mode, i) => {
+            const labels = { table: "表格", list: "列表", grouped: "分组" };
+            const isFirst = i === 0;
+            const isLast = i === 2;
+            return (
+              <button
+                key={mode}
+                type="button"
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewMode === mode
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                } ${isFirst ? "rounded-l-md" : ""} ${isLast ? "rounded-r-md" : ""}`}
+                onClick={() => {
+                  setViewMode(mode);
+                  localStorage.setItem(LS_VIEW_MODE, mode);
+                }}
+              >
+                {labels[mode]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -276,6 +303,16 @@ function SkillsPageInner() {
         <div className="flex h-40 items-center justify-center text-muted-foreground">
           没有匹配当前筛选条件的技能
         </div>
+      )}
+
+      {/* Table View */}
+      {viewMode === "table" && (
+        <SkillsTable
+          skills={skills}
+          onNameClick={handleCardClick}
+          onUpdated={handleSheetUpdated}
+          callStatsMap={callStatsMap}
+        />
       )}
 
       {/* List View (card grid) */}
@@ -308,6 +345,7 @@ function SkillsPageInner() {
       <SkillDetailSheet
         skill={selectedSkill}
         allSkillNames={allSkillNames}
+        allDomains={allDomains}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         onUpdated={handleSheetUpdated}

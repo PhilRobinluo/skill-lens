@@ -1,0 +1,129 @@
+{
+  "skills": {
+    "git-commit-helper": {
+      "name": "git-commit-helper",
+      "path": "/demo/skills/git-commit-helper",
+      "source": "self-built",
+      "description": "Generates conventional commit messages from staged changes. Analyzes git diff to produce clear, descriptive commit messages.",
+      "lineCount": 85,
+      "lastModified": "2026-02-28T10:30:00.000Z",
+      "claudeMdRefs": [{ "table": "Dev Tools", "trigger": "commit, git commit" }],
+      "tags": { "domain": ["Development"], "autoTagged": false, "frequency": "daily" },
+      "dependencies": [],
+      "notes": ""
+    },
+    "code-reviewer": {
+      "name": "code-reviewer",
+      "path": "/demo/skills/code-reviewer",
+      "source": "self-built",
+      "description": "Expert code review specialist. Reviews code for quality, security, and maintainability. Checks for OWASP top 10 vulnerabilities.",
+      "lineCount": 210,
+      "lastModified": "2026-03-01T08:15:00.000Z",
+      "claudeMdRefs": [{ "table": "Dev Tools", "trigger": "review, code review" }],
+      "tags": { "domain": ["Development", "Security"], "autoTagged": false, "frequency": "weekly" },
+      "dependencies": ["git-commit-helper"],
+      "notes": "Pairs well with git-commit-helper for PR workflow"
+    },
+    "note-writer": {
+      "name": "note-writer",
+      "path": "/demo/skills/note-writer",
+      "source": "self-built",
+      "description": "Captures conversation insights into structured notes. Routes to correct vault folder with proper frontmatter and wikilinks.",
+      "lineCount": 320,
+      "lastModified": "2026-02-25T14:20:00.000Z",
+      "claudeMdRefs": [{ "table": "Note Skills", "trigger": "save note, capture" }],
+      "tags": { "domain": ["Notes"], "autoTagged": false, "frequency": "daily" },
+      "dependencies": [],
+      "notes": ""
+    },
+    "note-finder": {
+      "name": "note-finder",
+      "path": "/demo/skills/note-finder",
+      "source": "self-built",
+      "description": "Searches across multiple knowledge vaults to find relevant notes. Supports cross-vault search with smart ranking.",
+      "lineCount": 180,
+      "lastModified": "2026-02-20T09:00:00.000Z",
+      "claudeMdRefs": [{ "table": "Note Skills", "trigger": "find note, search" }],
+      "tags": { "domain": ["Notes"], "autoTagged": false, "frequency": "weekly" },
+      "dependencies": [],
+      "notes": ""
+    },
+    "article-workflow": {
+      "name": "article-workflow",
+      "path": "/demo/skills/article-workflow",
+      "source": "self-built",
+      "description": "End-to-end writing workflow orchestrator. From topic selection to drafting, editing, and publishing preparation.",
+      "lineCount": 450,
+      "lastModified": "2026-03-02T16:45:00.000Z",
+      "claudeMdRefs": [{ "table": "Writing Skills", "trigger": "write, article" }],
+      "tags": { "domain": ["Writing"], "autoTagged": false, "frequency": "weekly" },
+      "dependencies": ["note-finder"],
+      "notes": "The most complex skill — orchestrates the full writing pipeline"
+    },
+    "image-generator": {
+      "name": "image-generator",
+      "path": "/demo/skills/image-generator",
+      "source": "plugin-community",
+      "description": "AI image generation with multiple providers. Supports text-to-image with style presets and automatic fallback.",
+      "lineCount": 290,
+      "lastModified": "2026-02-15T11:30:00.000Z",
+      "claudeMdRefs": [],
+      "tags": { "domain": ["Image"], "autoTagged": false, "frequency": "occasional" },
+      "dependencies": [],
+      "notes": ""
+    },
+    "task-manager": {
+      "name": "task-manager",
+      "path": "/demo/skills/task-manager",
+      "source": "self-built",
+      "description": "Cross-tool task management hub. Reads and updates daily tasks, backlog, and fixed routines across AI tools.",
+      "lineCount": 260,
+      "lastModified": "2026-03-03T07:00:00.000Z",
+      "claudeMdRefs": [{ "table": "Task Skills", "trigger": "task, todo, backlog" }],
+      "tags": { "domain": ["Productivity"], "autoTagged": false, "frequency": "daily" },
+      "dependencies": [],
+      "notes": ""
+    },
+    "device-manager": {
+      "name": "device-manager",
+      "path": "/demo/skills/device-manager",
+      "source": "self-built",
+      "description": "Manages SSH connections, server health checks, and Tailscale network. Handles device inventory and deployment keys.",
+      "lineCount": 300,
+      "lastModified": "2026-02-27T13:10:00.000Z",
+      "claudeMdRefs": [{ "table": "Infra Skills", "trigger": "ssh, server, device" }],
+      "tags": { "domain": ["Infrastructure"], "autoTagged": false, "frequency": "occasional" },
+      "dependencies": [],
+      "notes": ""
+    },
+    "slide-deck": {
+      "name": "slide-deck",
+      "path": "/demo/plugins/slide-deck",
+      "source": "plugin-official",
+      "description": "Generates professional slide deck images from content outline. Multiple visual styles and layout types available.",
+      "lineCount": 150,
+      "lastModified": "2026-01-20T10:00:00.000Z",
+      "claudeMdRefs": [],
+      "tags": { "domain": ["Image"], "autoTagged": true, "frequency": null },
+      "dependencies": [],
+      "notes": ""
+    },
+    "debug-helper": {
+      "name": "debug-helper",
+      "path": "/demo/skills/debug-helper",
+      "source": "plugin-community",
+      "description": "Systematic debugging specialist. Follows a structured approach: reproduce, isolate, identify root cause, fix, verify.",
+      "lineCount": 190,
+      "lastModified": "2026-02-10T15:30:00.000Z",
+      "claudeMdRefs": [{ "table": "Dev Tools", "trigger": "debug, fix bug" }],
+      "tags": { "domain": ["Development"], "autoTagged": false, "frequency": "weekly" },
+      "dependencies": ["code-reviewer"],
+      "notes": ""
+    }
+  },
+  "meta": {
+    "lastScan": "2026-03-03T12:00:00.000Z",
+    "totalSkills": 10,
+    "version": 1
+  }
+}

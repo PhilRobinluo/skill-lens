@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/", label: "总览" },
   { href: "/skills", label: "技能库" },
-  { href: "/graph", label: "依赖图" },
-  { href: "/pipelines", label: "编排" },
+  { href: "/graph", label: "图谱" },
+  { href: "/draft", label: "草稿" },
 ];
 
 export function Nav() {
@@ -19,7 +19,7 @@ export function Nav() {
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-4 sm:gap-8">
-          <span className="text-lg font-bold tracking-tight">Skill Manager</span>
+          <span className="text-lg font-bold tracking-tight">技能透镜</span>
 
           {/* Desktop nav links */}
           <div className="hidden items-center gap-1 sm:flex">

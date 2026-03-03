@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Skill Manager",
-  description: "Dashboard for managing Claude Code skills",
+  title: "技能透镜 Skill Lens",
+  description: "Claude Code Skills 可视化仪表盘",
 };
 
 export default function RootLayout({

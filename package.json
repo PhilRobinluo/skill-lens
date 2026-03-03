@@ -1,7 +1,21 @@
 {
-  "name": "skill-manager",
+  "name": "skill-lens",
   "version": "0.1.0",
-  "private": true,
+  "description": "Visual dashboard for Claude Code Skills — scan, browse, tag, and orchestrate your skill library",
+  "author": "Arthur Cai",
+  "license": "MIT",
+  "homepage": "https://github.com/arthurai-cai/skill-lens",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arthurai-cai/skill-lens.git"
+  },
+  "keywords": [
+    "claude-code",
+    "skills",
+    "dashboard",
+    "knowledge-graph",
+    "ai-tools"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,28 +25,28 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@dagrejs/dagre": "^2.0.4",
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
+    "@tanstack/react-table": "^8.21.3",
     "@xyflow/react": "^12.10.1",
     "chokidar": "^5.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.576.0",
     "next": "16.1.6",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-force-graph-3d": "^1.29.1",
     "recharts": "^3.7.0",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/dagre": "^0.7.54",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.183.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "shadcn": "^3.8.5",

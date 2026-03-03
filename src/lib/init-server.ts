@@ -1,6 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { scanAll } from "./scanner";
 import { readRegistry, writeRegistry } from "./registry";
 import { startWatcher } from "./watcher";
+import { DEMO_MODE, DATA_DIR } from "./config";
 
 // ---------------------------------------------------------------------------
 // Singleton: ensure server is initialized only once
@@ -23,6 +26,18 @@ export async function ensureInitialized(): Promise<void> {
 
 async function doInit(): Promise<void> {
   try {
+    if (DEMO_MODE) {
+      console.log("[init] demo mode — loading sample data...");
+      const demoPath = path.join(DATA_DIR, "demo-registry.json");
+      const registryPath = path.join(DATA_DIR, "skills-registry.json");
+      if (fs.existsSync(demoPath)) {
+        fs.copyFileSync(demoPath, registryPath);
+      }
+      console.log("[init] demo data loaded");
+      initialized = true;
+      return;
+    }
+
     console.log("[init] running initial scan...");
     const existing = await readRegistry();
     const updated = await scanAll(existing);

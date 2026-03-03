@@ -15,7 +15,6 @@ export async function POST(): Promise<NextResponse> {
       success: true,
       stats: {
         totalSkills: updated.meta.totalSkills,
-        totalPipelines: Object.keys(updated.pipelines).length,
         version: updated.meta.version,
         lastScan: updated.meta.lastScan,
       },

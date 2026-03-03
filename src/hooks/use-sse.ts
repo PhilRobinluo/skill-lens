@@ -8,7 +8,10 @@ import { useEffect, useRef, useCallback } from "react";
  */
 export function useSSE(onEvent: (data: unknown) => void) {
   const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent;
+
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   useEffect(() => {
     let es: EventSource | null = null;
@@ -55,7 +58,10 @@ export function useSSE(onEvent: (data: unknown) => void) {
  */
 export function useAutoRefresh(refetch: () => void) {
   const refetchRef = useRef(refetch);
-  refetchRef.current = refetch;
+
+  useEffect(() => {
+    refetchRef.current = refetch;
+  }, [refetch]);
 
   const handleEvent = useCallback((data: unknown) => {
     if (

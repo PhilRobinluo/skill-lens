@@ -6,7 +6,6 @@ import type { Frequency } from "@/lib/types";
 interface TagsBody {
   domain?: string[];
   frequency?: Frequency;
-  pipeline?: string;
 }
 
 export async function PATCH(
@@ -23,7 +22,6 @@ export async function PATCH(
     const tags: Record<string, unknown> = {};
     if (body.domain !== undefined) tags.domain = body.domain;
     if (body.frequency !== undefined) tags.frequency = body.frequency;
-    if (body.pipeline !== undefined) tags.pipeline = body.pipeline;
 
     const registry = await updateSkillTags(decodedName, tags);
     return NextResponse.json(registry.skills[decodedName]);

@@ -1,8 +1,7 @@
-import path from "node:path";
-import os from "node:os";
 import { watch, type FSWatcher } from "chokidar";
 import { scanAll } from "./scanner";
 import { readRegistry, writeRegistry } from "./registry";
+import { SKILL_DIRS, PLUGINS_CACHE_DIR, CLAUDE_MD_PATH } from "./config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,11 +25,8 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const DEBOUNCE_MS = 500;
 
 // ---------------------------------------------------------------------------
-// Paths to watch
+// Paths to watch (from centralized config)
 // ---------------------------------------------------------------------------
-const SKILLS_DIR = path.join(os.homedir(), ".claude", "skills");
-const PLUGINS_DIR = path.join(os.homedir(), ".claude", "plugins");
-const CLAUDE_MD_PATH = path.join(os.homedir(), ".claude", "CLAUDE.md");
 
 // ---------------------------------------------------------------------------
 // addChangeListener — register a listener for SSE push
@@ -88,7 +84,7 @@ export function startWatcher(): void {
   if (watcher) return; // Already running
 
   watcher = watch(
-    [SKILLS_DIR, PLUGINS_DIR, CLAUDE_MD_PATH],
+    [...SKILL_DIRS, PLUGINS_CACHE_DIR, CLAUDE_MD_PATH],
     {
       ignoreInitial: true,
       persistent: true,

@@ -1,8 +1,7 @@
-import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 
-import type { Pipeline, SkillsRegistry, SkillTags } from "./types";
+import type { SkillsRegistry, SkillTags } from "./types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -13,7 +12,6 @@ const REGISTRY_PATH = path.join(DATA_DIR, "skills-registry.json");
 function emptyRegistry(): SkillsRegistry {
   return {
     skills: {},
-    pipelines: {},
     meta: {
       lastScan: null,
       totalSkills: 0,
@@ -104,33 +102,3 @@ export async function updateSkillNotes(
   return registry;
 }
 
-// ---------------------------------------------------------------------------
-// upsertPipeline — create or update a pipeline
-// ---------------------------------------------------------------------------
-export async function upsertPipeline(
-  id: string,
-  pipeline: Pipeline,
-): Promise<SkillsRegistry> {
-  const registry = await readRegistry();
-
-  registry.pipelines[id] = pipeline;
-
-  await writeRegistry(registry);
-  return registry;
-}
-
-// ---------------------------------------------------------------------------
-// deletePipeline — delete a pipeline
-// ---------------------------------------------------------------------------
-export async function deletePipeline(id: string): Promise<SkillsRegistry> {
-  const registry = await readRegistry();
-
-  if (!registry.pipelines[id]) {
-    throw new Error(`Pipeline not found: "${id}"`);
-  }
-
-  delete registry.pipelines[id];
-
-  await writeRegistry(registry);
-  return registry;
-}

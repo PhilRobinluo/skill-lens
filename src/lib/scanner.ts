@@ -1,17 +1,14 @@
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
 
 import type { SkillEntry, SkillSource, SkillsRegistry } from "./types";
 import { parseClaudeMd } from "./claude-md-parser";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const SKILLS_DIR = path.join(os.homedir(), ".claude", "skills");
-const PLUGINS_CACHE_DIR = path.join(os.homedir(), ".claude", "plugins", "cache");
-const CLAUDE_MD_PATH = path.join(os.homedir(), ".claude", "CLAUDE.md");
+import {
+  SKILL_DIRS,
+  PLUGINS_CACHE_DIR,
+  CLAUDE_MD_PATH,
+} from "./config";
 
 // ---------------------------------------------------------------------------
 // parseSkillMd — extract description from SKILL.md content
@@ -98,10 +95,12 @@ export function detectSource(name: string, filePath: string): SkillSource {
 export async function scanSkillsDirectory(): Promise<Record<string, SkillEntry>> {
   const skills: Record<string, SkillEntry> = {};
 
-  // 1. Scan ~/.claude/skills/
-  await scanUserSkills(skills);
+  // 1. Scan user skill directories (configurable via SKILL_DIRS)
+  for (const dir of SKILL_DIRS) {
+    await scanUserSkills(skills, dir);
+  }
 
-  // 2. Scan ~/.claude/plugins/cache/ (recursive)
+  // 2. Scan plugins cache (recursive)
   await scanPluginsCache(skills);
 
   return skills;
@@ -109,17 +108,18 @@ export async function scanSkillsDirectory(): Promise<Record<string, SkillEntry>>
 
 async function scanUserSkills(
   skills: Record<string, SkillEntry>,
+  skillsDir: string,
 ): Promise<void> {
-  if (!fs.existsSync(SKILLS_DIR)) return;
+  if (!fs.existsSync(skillsDir)) return;
 
-  const entries = await fsp.readdir(SKILLS_DIR, { withFileTypes: true });
+  const entries = await fsp.readdir(skillsDir, { withFileTypes: true });
 
   for (const entry of entries) {
     // Skip _archived and dotfiles
     if (!entry.isDirectory()) continue;
     if (entry.name === "_archived" || entry.name.startsWith(".")) continue;
 
-    const skillDir = path.join(SKILLS_DIR, entry.name);
+    const skillDir = path.join(skillsDir, entry.name);
     const skillMdPath = path.join(skillDir, "SKILL.md");
 
     if (!fs.existsSync(skillMdPath)) continue;
@@ -194,7 +194,6 @@ async function buildSkillEntry(
       domain: [],
       autoTagged: false,
       frequency: null,
-      pipeline: null,
     },
     dependencies: [],
     notes: "",
@@ -340,7 +339,6 @@ export async function scanAll(
 
   const registry: SkillsRegistry = {
     skills,
-    pipelines: existingRegistry?.pipelines ?? {},
     meta: {
       lastScan: new Date().toISOString(),
       totalSkills: Object.keys(skills).length,

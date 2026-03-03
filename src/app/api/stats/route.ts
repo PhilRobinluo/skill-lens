@@ -57,7 +57,6 @@ export async function GET(): Promise<NextResponse> {
       totalSkills: skills.length,
       routedSkills,
       orphanSkills: skills.length - routedSkills,
-      totalPipelines: Object.keys(registry.pipelines).length,
       domainDistribution,
       sourceDistribution,
       recentChanges,

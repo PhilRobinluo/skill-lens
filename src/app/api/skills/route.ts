@@ -14,7 +14,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const domain = url.searchParams.get("domain");
     const source = url.searchParams.get("source");
     const frequency = url.searchParams.get("frequency");
-    const pipeline = url.searchParams.get("pipeline");
     const q = url.searchParams.get("q")?.toLowerCase();
 
     let skills = Object.values(registry.skills);
@@ -28,9 +27,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
     if (frequency) {
       skills = skills.filter((s) => s.tags.frequency === frequency);
-    }
-    if (pipeline) {
-      skills = skills.filter((s) => s.tags.pipeline === pipeline);
     }
     if (q) {
       skills = skills.filter(

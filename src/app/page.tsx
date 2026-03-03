@@ -137,9 +137,9 @@ export default function DashboardPage() {
           warning={stats.orphanSkills > stats.totalSkills * 0.5}
         />
         <StatCard
-          title="编排链路"
-          value={stats.totalPipelines}
-          description="已定义的工作流"
+          title="领域分类"
+          value={Object.keys(stats.domainDistribution).length}
+          description="已标注的功能域数量"
         />
       </div>
 
@@ -159,15 +159,21 @@ export default function DashboardPage() {
                     data={domainData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={55}
+                    outerRadius={90}
                     paddingAngle={2}
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) =>
-                      `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                    }
-                    labelLine={false}
+                    label={({ name, percent, x, y, textAnchor }) => {
+                      const p = (percent ?? 0) * 100;
+                      if (p < 5) return null;
+                      return (
+                        <text x={x} y={y} textAnchor={textAnchor} dominantBaseline="central" className="fill-foreground text-[11px]">
+                          {`${name} ${p.toFixed(0)}%`}
+                        </text>
+                      );
+                    }}
+                    labelLine={{ strokeWidth: 1 }}
                   >
                     {domainData.map((_, index) => (
                       <Cell
@@ -183,7 +189,7 @@ export default function DashboardPage() {
                       borderRadius: "8px",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

@@ -15,7 +15,6 @@ export interface SkillTags {
   domain: string[];
   autoTagged: boolean;
   frequency: Frequency | null;
-  pipeline: string | null;
 }
 
 export interface SkillEntry {
@@ -31,16 +30,6 @@ export interface SkillEntry {
   notes: string;
 }
 
-export interface PipelineStep {
-  skill: string;
-  role: string;
-}
-
-export interface Pipeline {
-  description: string;
-  steps: PipelineStep[];
-}
-
 export interface RegistryMeta {
   lastScan: string | null;
   totalSkills: number;
@@ -49,15 +38,49 @@ export interface RegistryMeta {
 
 export interface SkillsRegistry {
   skills: Record<string, SkillEntry>;
-  pipelines: Record<string, Pipeline>;
   meta: RegistryMeta;
 }
+
+// ---------- Table Filter Types ----------
+
+export type FilterOperator =
+  | "contains"
+  | "not_contains"
+  | "is_empty"
+  | "is_not_empty"
+  | "equals"
+  | "not_equals"
+  | "gt"
+  | "lt";
+
+export type FilterableField =
+  | "name"
+  | "source"
+  | "status"
+  | "domain"
+  | "description"
+  | "lineCount";
+
+export interface FilterCondition {
+  id: string;
+  field: FilterableField;
+  operator: FilterOperator;
+  value: string;
+}
+
+export type FilterLogic = "and" | "or";
+
+export interface FilterState {
+  conditions: FilterCondition[];
+  logic: FilterLogic;
+}
+
+// ---------- Dashboard ----------
 
 export interface DashboardStats {
   totalSkills: number;
   routedSkills: number;
   orphanSkills: number;
-  totalPipelines: number;
   domainDistribution: Record<string, number>;
   sourceDistribution: Record<string, number>;
   recentChanges: Array<{ name: string; lastModified: string }>;

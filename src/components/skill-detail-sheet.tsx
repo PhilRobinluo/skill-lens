@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -9,6 +9,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -19,22 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSkillMutations } from "@/hooks/use-skill-mutations";
 import type { SkillEntry, Frequency } from "@/lib/types";
 
 interface SkillDetailSheetProps {
   skill: SkillEntry | null;
   allSkillNames: string[];
+  allDomains?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
 }
 
-const DOMAIN_SUGGESTIONS = [
+export const DOMAIN_SUGGESTIONS = [
   "写作", "笔记", "安全", "网络", "任务", "图像",
   "发布", "分析", "设备", "工具", "视频", "投资",
 ];
 
-const FREQUENCY_OPTIONS: Array<{ value: string; label: string }> = [
+export const FREQUENCY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "unset", label: "Unset" },
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
@@ -42,41 +45,17 @@ const FREQUENCY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "rare", label: "Rare" },
 ];
 
-const SOURCE_LABELS: Record<string, string> = {
+export const SOURCE_LABELS: Record<string, string> = {
   "self-built": "自建",
   baoyu: "宝玉系列",
   "plugin-official": "官方插件",
   "plugin-community": "社区插件",
 };
 
-function useDebounce<T extends (...args: unknown[]) => void>(
-  fn: T,
-  delay: number,
-): T {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fnRef = useRef(fn);
-  fnRef.current = fn;
-
-  const debounced = useCallback(
-    (...args: unknown[]) => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => fnRef.current(...args), delay);
-    },
-    [delay],
-  ) as T;
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  return debounced;
-}
-
 export function SkillDetailSheet({
   skill,
   allSkillNames,
+  allDomains,
   open,
   onOpenChange,
   onUpdated,
@@ -85,7 +64,6 @@ export function SkillDetailSheet({
   const [domains, setDomains] = useState<string[]>([]);
   const [domainInput, setDomainInput] = useState("");
   const [frequency, setFrequency] = useState<string>("unset");
-  const [pipeline, setPipeline] = useState("");
   const [deps, setDeps] = useState<string[]>([]);
   const [depInput, setDepInput] = useState("");
   const [notes, setNotes] = useState("");
@@ -93,69 +71,29 @@ export function SkillDetailSheet({
   const [domainSuggestions, setDomainSuggestions] = useState<string[]>([]);
   const [showDepSuggestions, setShowDepSuggestions] = useState(false);
   const [showDomainSuggestions, setShowDomainSuggestions] = useState(false);
+  const [rawContent, setRawContent] = useState<string | null>(null);
+  const [rawContentPath, setRawContentPath] = useState<string | null>(null);
+  const [rawLoading, setRawLoading] = useState(false);
+  const [rawError, setRawError] = useState<string | null>(null);
 
   // Sync from prop
   useEffect(() => {
     if (skill) {
       setDomains(skill.tags.domain);
       setFrequency(skill.tags.frequency ?? "unset");
-      setPipeline(skill.tags.pipeline ?? "");
       setDeps(skill.dependencies);
       setNotes(skill.notes);
       setDomainInput("");
       setDepInput("");
+      setRawContent(null);
+      setRawContentPath(null);
+      setRawError(null);
+      setRawLoading(false);
     }
   }, [skill]);
 
-  // API helpers
-  const patchTags = useCallback(
-    async (body: Record<string, unknown>) => {
-      if (!skill) return;
-      await fetch(`/api/skills/${encodeURIComponent(skill.name)}/tags`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      onUpdated();
-    },
-    [skill, onUpdated],
-  );
-
-  const putDeps = useCallback(
-    async (dependencies: string[]) => {
-      if (!skill) return;
-      await fetch(`/api/skills/${encodeURIComponent(skill.name)}/deps`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dependencies }),
-      });
-      onUpdated();
-    },
-    [skill, onUpdated],
-  );
-
-  const patchNotes = useCallback(
-    async (notesValue: string) => {
-      if (!skill) return;
-      await fetch(`/api/skills/${encodeURIComponent(skill.name)}/notes`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes: notesValue }),
-      });
-      onUpdated();
-    },
-    [skill, onUpdated],
-  );
-
-  const debouncedPatchNotes = useDebounce(
-    (value: unknown) => patchNotes(value as string),
-    800,
-  );
-
-  const debouncedPatchPipeline = useDebounce(
-    (value: unknown) => patchTags({ pipeline: value as string }),
-    800,
-  );
+  const { patchTags, putDeps, debouncedPatchNotes } =
+    useSkillMutations({ skillName: skill?.name ?? null, onUpdated });
 
   // Handlers
   function addDomain(d: string) {
@@ -174,17 +112,20 @@ export function SkillDetailSheet({
     patchTags({ domain: next });
   }
 
+  // Merge static suggestions with actual existing domains from all skills
+  const domainPool = useMemo(() => {
+    const set = new Set(DOMAIN_SUGGESTIONS);
+    if (allDomains) for (const d of allDomains) set.add(d);
+    return Array.from(set).sort();
+  }, [allDomains]);
+
   function handleDomainInputChange(val: string) {
     setDomainInput(val);
-    if (val.trim()) {
-      const filtered = DOMAIN_SUGGESTIONS.filter(
-        (s) => s.includes(val) && !domains.includes(s),
-      );
-      setDomainSuggestions(filtered);
-      setShowDomainSuggestions(filtered.length > 0);
-    } else {
-      setShowDomainSuggestions(false);
-    }
+    const filtered = domainPool.filter(
+      (s) => (!val.trim() || s.includes(val)) && !domains.includes(s),
+    );
+    setDomainSuggestions(filtered);
+    setShowDomainSuggestions(filtered.length > 0);
   }
 
   function handleDomainKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -240,14 +181,36 @@ export function SkillDetailSheet({
     });
   }
 
-  function handlePipelineChange(value: string) {
-    setPipeline(value);
-    debouncedPatchPipeline(value || null);
-  }
-
   function handleNotesChange(value: string) {
     setNotes(value);
     debouncedPatchNotes(value);
+  }
+
+  async function handleLoadRawContent() {
+    if (!skill || rawLoading || rawContent) return;
+
+    setRawLoading(true);
+    setRawError(null);
+
+    try {
+      const res = await fetch(
+        `/api/skills/${encodeURIComponent(skill.name)}/content`,
+      );
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as {
+        content: string;
+        path: string;
+      };
+      setRawContent(data.content);
+      setRawContentPath(data.path);
+    } catch (err) {
+      setRawError(String(err));
+    } finally {
+      setRawLoading(false);
+    }
   }
 
   if (!skill) return null;
@@ -355,13 +318,11 @@ export function SkillDetailSheet({
                   setTimeout(() => setShowDomainSuggestions(false), 150)
                 }
                 onFocus={() => {
-                  if (domainInput.trim()) {
-                    const filtered = DOMAIN_SUGGESTIONS.filter(
-                      (s) => s.includes(domainInput) && !domains.includes(s),
-                    );
-                    setShowDomainSuggestions(filtered.length > 0);
-                    setDomainSuggestions(filtered);
-                  }
+                  const filtered = domainPool.filter(
+                    (s) => (!domainInput.trim() || s.includes(domainInput)) && !domains.includes(s),
+                  );
+                  setDomainSuggestions(filtered);
+                  setShowDomainSuggestions(filtered.length > 0);
                 }}
                 className="h-8 text-sm"
               />
@@ -401,19 +362,6 @@ export function SkillDetailSheet({
                 ))}
               </SelectContent>
             </Select>
-          </section>
-
-          {/* Editable: Pipeline */}
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              Pipeline
-            </h3>
-            <Input
-              placeholder="Pipeline name..."
-              value={pipeline}
-              onChange={(e) => handlePipelineChange(e.target.value)}
-              className="h-8 text-sm"
-            />
           </section>
 
           {/* Editable: Dependencies */}
@@ -491,6 +439,41 @@ export function SkillDetailSheet({
               onChange={(e) => handleNotesChange(e.target.value)}
               className="min-h-[80px] text-sm"
             />
+          </section>
+
+          <Separator />
+
+          <section className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">
+                SKILL.md 原文
+              </h3>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleLoadRawContent}
+                disabled={rawLoading || rawContent !== null}
+              >
+                {rawLoading ? "加载中..." : rawContent ? "已加载" : "查看原文"}
+              </Button>
+            </div>
+
+            {rawError && (
+              <p className="text-xs text-red-500">{rawError}</p>
+            )}
+
+            {rawContentPath && (
+              <p className="break-all font-mono text-xs text-muted-foreground">
+                {rawContentPath}
+              </p>
+            )}
+
+            {rawContent && (
+              <pre className="max-h-[360px] overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-5">
+                <code>{rawContent}</code>
+              </pre>
+            )}
           </section>
         </div>
       </SheetContent>

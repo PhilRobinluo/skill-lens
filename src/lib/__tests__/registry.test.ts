@@ -9,8 +9,6 @@ import {
   updateSkillTags,
   updateSkillDeps,
   updateSkillNotes,
-  upsertPipeline,
-  deletePipeline,
 } from "../registry";
 
 import type { SkillsRegistry, SkillEntry } from "../types";
@@ -31,7 +29,7 @@ function makeSkill(name: string): SkillEntry {
     lineCount: 10,
     lastModified: new Date().toISOString(),
     claudeMdRefs: [],
-    tags: { domain: [], autoTagged: false, frequency: null, pipeline: null },
+    tags: { domain: [], autoTagged: false, frequency: null },
     dependencies: [],
     notes: "",
   };
@@ -45,7 +43,6 @@ function makeRegistry(skillNames: string[]): SkillsRegistry {
   }
   return {
     skills,
-    pipelines: {},
     meta: { lastScan: new Date().toISOString(), totalSkills: skillNames.length, version: 1 },
   };
 }
@@ -97,7 +94,6 @@ describe("readRegistry", () => {
 
     const result = await readRegistry();
     expect(result.skills).toEqual({});
-    expect(result.pipelines).toEqual({});
     expect(result.meta.lastScan).toBeNull();
     expect(result.meta.totalSkills).toBe(0);
     expect(result.meta.version).toBe(1);
@@ -126,9 +122,6 @@ describe("writeRegistry", () => {
   });
 
   it("creates data directory if it does not exist", async () => {
-    // We know data/ already exists in the project, so this is more of a
-    // safety test for the mkdir call. The implementation uses { recursive: true }
-    // so it won't fail even if the directory already exists.
     const reg = makeRegistry([]);
     await writeRegistry(reg);
 
@@ -141,7 +134,6 @@ describe("writeRegistry", () => {
 
     const raw = await fsp.readFile(REGISTRY_PATH, "utf-8");
     expect(raw.endsWith("\n")).toBe(true);
-    // Should be indented (not minified)
     expect(raw).toContain("  ");
   });
 });
@@ -161,8 +153,6 @@ describe("updateSkillTags", () => {
 
     expect(updated.skills["my-skill"].tags.domain).toEqual(["obsidian", "notes"]);
     expect(updated.skills["my-skill"].tags.frequency).toBe("daily");
-    // pipeline should remain null (not overwritten)
-    expect(updated.skills["my-skill"].tags.pipeline).toBeNull();
 
     // Verify it was persisted
     const reRead = await readRegistry();
@@ -230,78 +220,5 @@ describe("updateSkillNotes", () => {
     await expect(
       updateSkillNotes("missing", "note"),
     ).rejects.toThrow('Skill not found: "missing"');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// upsertPipeline
-// ---------------------------------------------------------------------------
-describe("upsertPipeline", () => {
-  it("creates a new pipeline", async () => {
-    const reg = makeRegistry([]);
-    await writeRegistry(reg);
-
-    const updated = await upsertPipeline("write-publish", {
-      description: "Write and publish articles",
-      steps: [
-        { skill: "article-workflow", role: "writer" },
-        { skill: "wechat-publish-helper", role: "publisher" },
-      ],
-    });
-
-    expect(updated.pipelines["write-publish"]).toBeDefined();
-    expect(updated.pipelines["write-publish"].steps).toHaveLength(2);
-
-    // Verify persistence
-    const reRead = await readRegistry();
-    expect(reRead.pipelines["write-publish"].description).toBe("Write and publish articles");
-  });
-
-  it("updates an existing pipeline", async () => {
-    const reg = makeRegistry([]);
-    reg.pipelines["existing"] = {
-      description: "Old description",
-      steps: [{ skill: "old-skill", role: "old-role" }],
-    };
-    await writeRegistry(reg);
-
-    const updated = await upsertPipeline("existing", {
-      description: "New description",
-      steps: [{ skill: "new-skill", role: "new-role" }],
-    });
-
-    expect(updated.pipelines["existing"].description).toBe("New description");
-    expect(updated.pipelines["existing"].steps[0].skill).toBe("new-skill");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// deletePipeline
-// ---------------------------------------------------------------------------
-describe("deletePipeline", () => {
-  it("deletes an existing pipeline", async () => {
-    const reg = makeRegistry([]);
-    reg.pipelines["to-delete"] = {
-      description: "Will be deleted",
-      steps: [],
-    };
-    await writeRegistry(reg);
-
-    const updated = await deletePipeline("to-delete");
-
-    expect(updated.pipelines["to-delete"]).toBeUndefined();
-
-    // Verify persistence
-    const reRead = await readRegistry();
-    expect(reRead.pipelines["to-delete"]).toBeUndefined();
-  });
-
-  it("throws error when pipeline not found", async () => {
-    const reg = makeRegistry([]);
-    await writeRegistry(reg);
-
-    await expect(
-      deletePipeline("nonexistent"),
-    ).rejects.toThrow('Pipeline not found: "nonexistent"');
   });
 });

@@ -767,7 +767,7 @@
       "claudeMdRefs": [
         {
           "table": "写作工作流 Skill 路由",
-          "trigger": "抖音、短视频、口播、起号、脚本、录视频、拍视频、视频选题、视频文案、抖音运营、涨粉、爆款视频"
+          "trigger": "抖音、短视频、起号、录视频、拍视频、抖音运营、涨粉、爆款视频、流量、合规"
         }
       ],
       "tags": {
@@ -1342,7 +1342,12 @@
       "description": "口播稿全流程工作流编排器。从选题验证 → 口播稿生成 → 质检评分 → 优化循环 → 待录制输出。\n⛔ 不要自己写口播稿！用户有严格的质检评分卡（6维100分制），不调用此 Skill = 没有选题验证、没有评分、没有优化循环、Arthur 白录一条废视频。\n触发词：口播稿、短视频脚本、帮我写口播、录视频文案、拆成短视频、从文章拆短视频、视频脚本、oral script。",
       "lineCount": 318,
       "lastModified": "2026-03-02T20:35:51.731Z",
-      "claudeMdRefs": [],
+      "claudeMdRefs": [
+        {
+          "table": "写作工作流 Skill 路由",
+          "trigger": "写口播稿、帮我写脚本、拆成短视频、从文章拆短视频、视频文案、口播、视频脚本、oral script"
+        }
+      ],
       "tags": {
         "domain": [
           "写作"
@@ -1726,7 +1731,7 @@
         "domain": [
           "未分类"
         ],
-        "frequency": null,
+        "frequency": "daily",
         "pipeline": null,
         "autoTagged": true
       },
@@ -2657,20 +2662,9 @@
       "notes": ""
     }
   },
-  "pipelines": {
-    "文章": {
-      "description": "开始",
-      "steps": [
-        {
-          "skill": "placeholder",
-          "role": "起始"
-        }
-      ]
-    }
-  },
   "meta": {
-    "lastScan": "2026-03-03T05:36:18.260Z",
+    "lastScan": "2026-03-03T12:01:26.521Z",
     "totalSkills": 132,
-    "version": 10
+    "version": 23
   }
 }
