@@ -10,8 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { SkillCard } from "@/components/skill-card";
 import { SkillDetailSheet } from "@/components/skill-detail-sheet";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { useAutoRefresh } from "@/hooks/use-sse";
 import type { SkillEntry } from "@/lib/types";
 
@@ -31,13 +33,7 @@ const CLAUDE_STATUS_OPTIONS = [
 
 export default function SkillsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingSpinner text="Loading skills..." />}>
       <SkillsPageInner />
     </Suspense>
   );
@@ -177,8 +173,19 @@ function SkillsPageInner() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
+        <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <span className="flex-1">{error}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetchSkills();
+            }}
+          >
+            Retry
+          </Button>
         </div>
       )}
 

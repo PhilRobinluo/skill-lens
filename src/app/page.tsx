@@ -21,6 +21,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAutoRefresh } from "@/hooks/use-sse";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { ErrorMessage } from "@/components/error-message";
 import type { DashboardStats } from "@/lib/types";
 
 const PIE_COLORS = [
@@ -80,18 +82,15 @@ export default function DashboardPage() {
 
   if (error && !stats) {
     return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <p className="text-destructive">Failed to load stats: {error}</p>
-      </div>
+      <ErrorMessage
+        message={`Failed to load stats: ${error}`}
+        onRetry={fetchStats}
+      />
     );
   }
 
   if (!stats) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <LoadingSpinner text="Loading dashboard..." />;
   }
 
   const domainData = Object.entries(stats.domainDistribution).map(

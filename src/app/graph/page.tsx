@@ -12,6 +12,8 @@ import {
   type GraphView,
 } from "@/components/dependency-graph";
 import { useAutoRefresh } from "@/hooks/use-sse";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { ErrorMessage } from "@/components/error-message";
 import type { SkillEntry } from "@/lib/types";
 
 export default function GraphPage() {
@@ -46,20 +48,15 @@ export default function GraphPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <p className="text-muted-foreground">Loading graph...</p>
-      </div>
-    );
+    return <LoadingSpinner text="Loading graph..." />;
   }
 
   if (error) {
     return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center p-6">
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      </div>
+      <ErrorMessage
+        message={`Failed to load graph: ${error}`}
+        onRetry={fetchSkills}
+      />
     );
   }
 

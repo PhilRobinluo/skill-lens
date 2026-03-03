@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { PipelineEditor } from "@/components/pipeline-editor";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { useAutoRefresh } from "@/hooks/use-sse";
 import type { Pipeline, PipelineStep } from "@/lib/types";
 import type { PipelineStepData } from "@/components/pipeline-step";
@@ -139,6 +140,11 @@ export default function PipelinesPage() {
     }
   }
 
+  // Show full-page spinner on initial load
+  if (loading && pipelines.length === 0 && !error) {
+    return <LoadingSpinner text="Loading pipelines..." />;
+  }
+
   async function handleDelete(id: string) {
     try {
       const res = await fetch(
@@ -177,8 +183,19 @@ export default function PipelinesPage() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
+        <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <span className="flex-1">{error}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetchData();
+            }}
+          >
+            Retry
+          </Button>
         </div>
       )}
 
