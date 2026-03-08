@@ -1,8 +1,40 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { SkillEntry } from "./types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// ---------------------------------------------------------------------------
+// Scope filtering — shared by all API endpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter skills array by scope parameter.
+ * - "global" → only belongsTo === "global"
+ * - "all" → no filter (return everything)
+ * - "project:<path>" → only belongsTo === path
+ * - "combined:<path>" → belongsTo === path OR belongsTo === "global"
+ * - undefined/null → same as "global" (backward compatible)
+ */
+export function filterByScope(skills: SkillEntry[], scope: string | null): SkillEntry[] {
+  if (!scope || scope === "global") {
+    return skills.filter(s => s.belongsTo === "global");
+  }
+  if (scope === "all") {
+    return skills;
+  }
+  if (scope.startsWith("combined:")) {
+    const projectPath = scope.slice("combined:".length);
+    return skills.filter(s => s.belongsTo === projectPath || s.belongsTo === "global");
+  }
+  if (scope.startsWith("project:")) {
+    const projectPath = scope.slice("project:".length);
+    return skills.filter(s => s.belongsTo === projectPath);
+  }
+  // Fallback: treat as global
+  return skills.filter(s => s.belongsTo === "global");
 }
 
 // ---------------------------------------------------------------------------

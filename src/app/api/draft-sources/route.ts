@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
 import { parseClaudeMdRouteRows } from "@/lib/claude-md-parser";
+import { discoverProjects } from "@/lib/project-discovery";
 
 interface DraftSkillItem {
   id: string;
@@ -100,26 +101,23 @@ export async function GET(): Promise<NextResponse> {
 async function findClaudeDocs(): Promise<Array<{ label: string; path: string }>> {
   const docs: Array<{ label: string; path: string }> = [];
 
+  // Global CLAUDE.md
   const globalPath = path.join(os.homedir(), ".claude", "CLAUDE.md");
   if (await exists(globalPath)) {
     docs.push({ label: "全局", path: globalPath });
   }
 
-  const currentProjectPath = path.join(process.cwd(), "CLAUDE.md");
-  if (await exists(currentProjectPath)) {
-    docs.push({ label: "当前项目", path: currentProjectPath });
-  }
-
-  const notesRoot = path.join(os.homedir(), "基于github同步笔记");
-  if (await exists(notesRoot)) {
-    const entries = await fsp.readdir(notesRoot, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const maybeClaude = path.join(notesRoot, entry.name, "CLAUDE.md");
-      if (await exists(maybeClaude)) {
-        docs.push({ label: `项目:${entry.name}`, path: maybeClaude });
+  // Project-level CLAUDE.md files (via project discovery)
+  try {
+    const projects = await discoverProjects();
+    for (const project of projects) {
+      if (project.hasClaudeMd) {
+        const claudeMdPath = path.join(project.path, "CLAUDE.md");
+        docs.push({ label: project.name, path: claudeMdPath });
       }
     }
+  } catch {
+    // Fallback: skip project discovery if it fails
   }
 
   return docs;

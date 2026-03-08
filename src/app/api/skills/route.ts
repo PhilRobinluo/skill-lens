@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { type NextRequest, NextResponse } from "next/server";
 import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
+import { filterByScope } from "@/lib/utils";
 import type { SkillEntry } from "@/lib/types";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -12,15 +13,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const url = new URL(request.url);
 
     // Extract filter params
+    const scope = url.searchParams.get("scope");
     const domain = url.searchParams.get("domain");
     const source = url.searchParams.get("source");
     const frequency = url.searchParams.get("frequency");
     const q = url.searchParams.get("q")?.toLowerCase();
 
     // Filter out skills whose directories no longer exist on disk
-    // (handles the case where watcher hasn't completed rescan yet)
-    let skills = Object.values(registry.skills).filter((s) =>
-      fs.existsSync(s.path),
+    // then apply scope filter
+    let skills = filterByScope(
+      Object.values(registry.skills).filter((s) => fs.existsSync(s.path)),
+      scope,
     );
 
     // Apply filters

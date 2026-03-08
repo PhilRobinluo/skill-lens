@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
+import { filterByScope } from "@/lib/utils";
 import type { DashboardStats } from "@/lib/types";
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -10,12 +11,14 @@ const SOURCE_LABELS: Record<string, string> = {
   "plugin-community": "社区插件",
 };
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   await ensureInitialized();
 
   try {
     const registry = await readRegistry();
-    const skills = Object.values(registry.skills);
+    const url = new URL(request.url);
+    const scope = url.searchParams.get("scope");
+    const skills = filterByScope(Object.values(registry.skills), scope);
 
     // Count routed skills (those with at least one CLAUDE.md ref)
     const routedSkills = skills.filter(

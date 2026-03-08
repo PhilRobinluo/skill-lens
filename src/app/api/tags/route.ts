@@ -3,13 +3,18 @@ import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry, writeRegistry } from "@/lib/registry";
 
 /** GET /api/tags — list all unique domain tags with skill counts */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   await ensureInitialized();
 
   const registry = await readRegistry();
+  const url = new URL(request.url);
+  const scope = url.searchParams.get("scope");
+
+  const { filterByScope } = await import("@/lib/utils");
+  const scopedSkills = filterByScope(Object.values(registry.skills), scope);
   const tagMap = new Map<string, number>();
 
-  for (const skill of Object.values(registry.skills)) {
+  for (const skill of scopedSkills) {
     for (const d of skill.tags.domain) {
       tagMap.set(d, (tagMap.get(d) ?? 0) + 1);
     }
