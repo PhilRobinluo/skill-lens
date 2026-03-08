@@ -9,6 +9,7 @@ const links = [
   { href: "/", label: "总览" },
   { href: "/tags", label: "管理" },
   { href: "/skills", label: "浏览" },
+  { href: "/routes", label: "路由表" },
   { href: "/draft", label: "编排" },
 ];
 
