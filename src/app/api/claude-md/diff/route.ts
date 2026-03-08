@@ -27,7 +27,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     // Get the actual diff
     const { stdout: diffOutput } = await execFile(
       "git",
-      ["show", sha, "--format=", "--no-stat", "-p", "--", "CLAUDE.md"],
+      ["show", sha, "--format=", "-p", "--", "CLAUDE.md"],
       { cwd: claudeDir, maxBuffer: 2 * 1024 * 1024 },
     );
 

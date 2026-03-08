@@ -51,7 +51,7 @@ export async function GET(
     // Get the diff
     const { stdout: diffOutput } = await execFile(
       "git",
-      ["show", sha, "--format=", "--no-stat", "-p", "--", `${relativePath}/`],
+      ["show", sha, "--format=", "-p", "--", `${relativePath}/`],
       { cwd: claudeDir, maxBuffer: 2 * 1024 * 1024 },
     );
 
