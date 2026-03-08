@@ -5,7 +5,7 @@ import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ name: string }> },
 ): Promise<NextResponse> {
   await ensureInitialized();
@@ -26,12 +26,24 @@ export async function GET(
       );
     }
 
-    const skillMdPath = path.join(skill.path, "SKILL.md");
-    const content = await fsp.readFile(skillMdPath, "utf-8");
+    // Parse ?file= query parameter, default to SKILL.md
+    const url = new URL(request.url);
+    const fileParam = url.searchParams.get("file") || "SKILL.md";
+
+    // Resolve and validate path — prevent directory traversal
+    const filePath = path.resolve(skill.path, fileParam);
+    if (!filePath.startsWith(skill.path)) {
+      return NextResponse.json(
+        { error: "Access denied: path outside skill directory" },
+        { status: 403 },
+      );
+    }
+
+    const content = await fsp.readFile(filePath, "utf-8");
 
     return NextResponse.json({
       name: skill.name,
-      path: skillMdPath,
+      path: filePath,
       content,
       lineCount: content.split("\n").length,
     });
@@ -39,7 +51,7 @@ export async function GET(
     const message = String(err);
     if (message.includes("ENOENT")) {
       return NextResponse.json(
-        { error: "SKILL.md file not found for this skill" },
+        { error: "File not found" },
         { status: 404 },
       );
     }
