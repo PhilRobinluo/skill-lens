@@ -8,6 +8,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import Markdown from "react-markdown";
 import { useSkillMutations } from "@/hooks/use-skill-mutations";
 import { cleanDescriptionFull, skillDisplayName } from "@/lib/utils";
-import type { SkillEntry } from "@/lib/types";
+import type { SkillEntry, SkillGitHistory, ModificationType } from "@/lib/types";
 
 interface SkillDetailSheetProps {
   skill: SkillEntry | null;
@@ -52,6 +53,9 @@ export function SkillDetailSheet({
   const [rawContentPath, setRawContentPath] = useState<string | null>(null);
   const [rawLoading, setRawLoading] = useState(false);
   const [rawError, setRawError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [gitHistory, setGitHistory] = useState<SkillGitHistory | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Sync from prop
   useEffect(() => {
@@ -63,6 +67,9 @@ export function SkillDetailSheet({
       setRawContentPath(null);
       setRawError(null);
       setRawLoading(false);
+      setActiveTab("overview");
+      setGitHistory(null);
+      setHistoryLoading(false);
     }
   }, [skill]);
 
@@ -110,6 +117,19 @@ export function SkillDetailSheet({
   function handleNotesChange(value: string) {
     setNotes(value);
     debouncedPatchNotes(value);
+  }
+
+  async function loadGitHistory() {
+    if (!skill || historyLoading || gitHistory) return;
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/skills/${encodeURIComponent(skill.name)}/history`);
+      if (res.ok) {
+        setGitHistory(await res.json());
+      }
+    } catch { /* ignore */ } finally {
+      setHistoryLoading(false);
+    }
   }
 
   async function handleLoadRawContent() {
@@ -169,7 +189,18 @@ export function SkillDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 px-4 pb-8">
+        <div className="px-4 pb-8">
+          <Tabs value={activeTab} onValueChange={(v) => {
+            setActiveTab(v);
+            if (v === "timeline" && !gitHistory) loadGitHistory();
+          }}>
+            <TabsList className="w-full">
+              <TabsTrigger value="overview" className="flex-1">概览</TabsTrigger>
+              <TabsTrigger value="timeline" className="flex-1">时间线</TabsTrigger>
+              <TabsTrigger value="upstream" className="flex-1">上游</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6 pt-4">
           {/* Read-only info */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">Info</h3>
@@ -340,8 +371,146 @@ export function SkillDetailSheet({
               </pre>
             )}
           </section>
+            </TabsContent>
+
+            <TabsContent value="timeline" className="pt-4">
+              <TimelineTab history={gitHistory} loading={historyLoading} />
+            </TabsContent>
+
+            <TabsContent value="upstream" className="pt-4">
+              <UpstreamTab skill={skill} onUpdated={onUpdated} />
+            </TabsContent>
+          </Tabs>
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function TimelineTab({ history, loading }: { history: SkillGitHistory | null; loading: boolean }) {
+  if (loading) return <p className="text-sm text-muted-foreground">加载中...</p>;
+  if (!history || history.totalCommits === 0) {
+    return <p className="text-sm text-muted-foreground/60 italic">无 Git 历史记录</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <span>{history.totalCommits} commits</span>
+        <span>{history.contributors.join(", ")}</span>
+        {history.hasUncommittedChanges && (
+          <Badge variant="outline" className="text-[10px] text-amber-600">未提交改动</Badge>
+        )}
+      </div>
+      <div className="relative border-l-2 border-muted pl-4 space-y-4">
+        {history.timeline.map((commit, i) => (
+          <div key={commit.sha} className="relative">
+            <div className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-background ${
+              i === history.timeline.length - 1 ? "bg-green-500" : "bg-primary"
+            }`} />
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium">{commit.message}</p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <code className="font-mono">{commit.sha}</code>
+                <span>{commit.author}</span>
+                <span>{new Date(commit.date).toLocaleDateString("zh-CN")}</span>
+                {(commit.additions > 0 || commit.deletions > 0) && (
+                  <span>
+                    <span className="text-green-600">+{commit.additions}</span>
+                    {" "}
+                    <span className="text-red-500">-{commit.deletions}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () => void }) {
+  const upstream = skill.upstream;
+
+  if (!upstream) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground/60 italic">原创技能，无上游来源</p>
+        <p className="text-xs text-muted-foreground">
+          如果此技能基于外部项目，可在详情中手动设置上游信息。
+        </p>
+      </div>
+    );
+  }
+
+  const MOD_LABELS: Record<ModificationType, { label: string; className: string }> = {
+    bugfix: { label: "临时补丁", className: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+    capability: { label: "核心能力", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+    config: { label: "环境适配", className: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300" },
+  };
+
+  async function markReconciled() {
+    await fetch(`/api/skills/${encodeURIComponent(skill.name)}/upstream`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lastReconciled: new Date().toISOString() }),
+    });
+    onUpdated();
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">上游来源</h3>
+        <div className="grid grid-cols-2 gap-y-1.5 text-sm">
+          <span className="text-muted-foreground">来源</span>
+          <span className="font-mono text-xs">{upstream.origin}</span>
+          {upstream.originUrl && (
+            <>
+              <span className="text-muted-foreground">URL</span>
+              <a href={upstream.originUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:underline dark:text-blue-400">
+                {upstream.originUrl}
+              </a>
+            </>
+          )}
+          <span className="text-muted-foreground">状态</span>
+          <span>
+            {upstream.status === "modified" ? "🔀 已修改" :
+             upstream.status === "following" ? "📌 跟随上游" : "— 原创"}
+          </span>
+          <span className="text-muted-foreground">上次对账</span>
+          <span className="flex items-center gap-2">
+            {upstream.lastReconciled
+              ? new Date(upstream.lastReconciled).toLocaleDateString("zh-CN")
+              : "从未对账"}
+            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={markReconciled}>
+              标记已对账
+            </Button>
+          </span>
+        </div>
+      </section>
+
+      {upstream.modifications.length > 0 && (
+        <section className="space-y-2">
+          <Separator />
+          <h3 className="text-sm font-semibold text-muted-foreground">本地修改</h3>
+          <div className="space-y-2">
+            {upstream.modifications.map((mod, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm">
+                <Badge variant="outline" className={`shrink-0 text-[10px] ${MOD_LABELS[mod.type].className}`}>
+                  {MOD_LABELS[mod.type].label}
+                </Badge>
+                <div>
+                  <p>{mod.summary}</p>
+                  <p className="font-mono text-xs text-muted-foreground">{mod.file}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
   );
 }
