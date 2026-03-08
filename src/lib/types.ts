@@ -215,6 +215,23 @@ export interface EvolutionStats {
   mostActive: Array<{ name: string; commits: number }>;
 }
 
+// ---------- Project Scope ----------
+
+export type ScopeType = "global" | "all" | `project:${string}` | `combined:${string}`;
+
+export interface ProjectInfo {
+  /** Display name (directory basename) */
+  name: string;
+  /** Absolute path to project root */
+  path: string;
+  /** Number of skills in .claude/skills/ */
+  skillCount: number;
+  /** Whether the project has its own CLAUDE.md */
+  hasClaudeMd: boolean;
+  /** Whether the project has .claude/skills/ */
+  hasSkills: boolean;
+}
+
 // ---------- Upstream Update Detection ----------
 
 export interface UpstreamUpdateInfo {
