@@ -118,6 +118,16 @@ export default function RoutesPage() {
     return () => { cancelled = true; };
   }, []);
 
+  const [expandedDiffs, setExpandedDiffs] = useState<Record<string, string>>({});
+  const [loadingDiffs, setLoadingDiffs] = useState<Record<string, boolean>>({});
+
+  // Lookup commit messages by SHA (from history data)
+  const shaMessages = useMemo(() => {
+    const map: Record<string, string> = {};
+    history.forEach((c) => { map[c.sha] = c.message; });
+    return map;
+  }, [history]);
+
   // Generate consistent colors for different SHAs
   const shaColors = useMemo(() => {
     const uniqueShas = [...new Set(blameLines.map(l => l.sha))];
@@ -143,6 +153,28 @@ export default function RoutesPage() {
     const content = blameLines.map(l => l.content).join("\n");
     return parseRouteTables(content);
   }, [blameLines]);
+
+  async function loadDiff(sha: string) {
+    if (expandedDiffs[sha] !== undefined) {
+      // Toggle off
+      setExpandedDiffs((prev) => {
+        const next = { ...prev };
+        delete next[sha];
+        return next;
+      });
+      return;
+    }
+    setLoadingDiffs((prev) => ({ ...prev, [sha]: true }));
+    try {
+      const res = await fetch(`/api/claude-md/diff?sha=${sha}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedDiffs((prev) => ({ ...prev, [sha]: data.diff }));
+      }
+    } catch { /* ignore */ } finally {
+      setLoadingDiffs((prev) => ({ ...prev, [sha]: false }));
+    }
+  }
 
   if (loading) {
     return (
@@ -183,7 +215,7 @@ export default function RoutesPage() {
                   } ${shaColors[line.sha] ?? ""}`}
                   onMouseEnter={() => setHoveredSha(line.sha)}
                   onMouseLeave={() => setHoveredSha(null)}
-                  title={`${line.sha} · ${line.author} · ${new Date(line.date).toLocaleDateString("zh-CN")}`}
+                  title={`${line.sha} · ${line.author} · ${new Date(line.date).toLocaleDateString("zh-CN")}\n${shaMessages[line.sha] ?? ""}`}
                 >
                   {/* Line number */}
                   <span className="w-10 shrink-0 select-none px-1.5 py-0.5 text-right text-muted-foreground/40">
@@ -258,17 +290,29 @@ export default function RoutesPage() {
         <CardContent>
           <div className="space-y-2">
             {history.slice(0, 20).map((commit) => (
-              <div key={commit.sha} className="flex items-center gap-3 text-sm">
-                <code className="shrink-0 font-mono text-xs text-muted-foreground">
-                  {commit.sha}
-                </code>
-                <span className="flex-1 truncate">{commit.message}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {commit.author}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {new Date(commit.date).toLocaleDateString("zh-CN")}
-                </span>
+              <div key={commit.sha}>
+                <div className="flex items-center gap-3 text-sm">
+                  <code className="shrink-0 font-mono text-xs text-muted-foreground">
+                    {commit.sha}
+                  </code>
+                  <span className="flex-1 truncate">{commit.message}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {commit.author}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {new Date(commit.date).toLocaleDateString("zh-CN")}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded px-2 py-0.5 text-xs text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
+                    onClick={() => loadDiff(commit.sha)}
+                  >
+                    {loadingDiffs[commit.sha] ? "加载中..." : expandedDiffs[commit.sha] !== undefined ? "收起" : "查看变更"}
+                  </button>
+                </div>
+                {expandedDiffs[commit.sha] !== undefined && (
+                  <DiffViewer diff={expandedDiffs[commit.sha]} />
+                )}
               </div>
             ))}
             {history.length === 0 && (
@@ -277,6 +321,36 @@ export default function RoutesPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function DiffViewer({ diff }: { diff: string }) {
+  if (!diff.trim()) {
+    return <p className="py-2 text-xs text-muted-foreground/60 italic">无文件变更</p>;
+  }
+
+  const lines = diff.split("\n");
+
+  return (
+    <div className="my-2 max-h-[300px] overflow-auto rounded-md border bg-muted/10 font-mono text-xs">
+      {lines.map((line, i) => {
+        let className = "px-3 py-px whitespace-pre-wrap break-all";
+        if (line.startsWith("+") && !line.startsWith("+++")) {
+          className += " bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300";
+        } else if (line.startsWith("-") && !line.startsWith("---")) {
+          className += " bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300";
+        } else if (line.startsWith("@@")) {
+          className += " bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300";
+        } else {
+          className += " text-muted-foreground";
+        }
+        return (
+          <div key={i} className={className}>
+            {line || "\u00A0"}
+          </div>
+        );
+      })}
     </div>
   );
 }
