@@ -33,6 +33,8 @@ const FIELD_OPTIONS: Array<{ value: FilterableField; label: string; type: "text"
   { value: "domain", label: "领域", type: "multi" },
   { value: "description", label: "描述", type: "text" },
   { value: "lineCount", label: "行数", type: "number" },
+  { value: "upstream", label: "上游状态", type: "enum" },
+  { value: "commits", label: "Commits", type: "number" },
 ];
 
 function getFieldType(field: FilterableField) {
@@ -74,6 +76,11 @@ const VALUE_OPTIONS: Partial<Record<FilterableField, Array<{ value: string; labe
     { value: "routed", label: "已路由" },
     { value: "orphan", label: "孤立" },
   ],
+  upstream: [
+    { value: "original", label: "原创" },
+    { value: "following", label: "跟随上游" },
+    { value: "modified", label: "已修改" },
+  ],
 };
 
 let nextId = 0;
@@ -93,6 +100,8 @@ function getFieldValue(skill: SkillEntry, field: FilterableField): string {
     case "domain": return skill.tags.domain.join(", ");
     case "description": return skill.description;
     case "lineCount": return String(skill.lineCount);
+    case "upstream": return skill.upstream?.status ?? "original";
+    case "commits": return String(skill.gitHistory?.totalCommits ?? 0);
   }
 }
 

@@ -169,6 +169,66 @@ export function getColumns(
         );
       },
     },
+    // 7.5 Upstream status
+    {
+      id: "upstream",
+      accessorFn: (row) => row.upstream?.status ?? "original",
+      header: ({ column }) => <TableColumnHeader column={column} title="上游" />,
+      cell: ({ row }) => {
+        const upstream = row.original.upstream;
+        if (!upstream) {
+          return <span className="text-xs text-muted-foreground/50">—</span>;
+        }
+        if (upstream.status === "modified") {
+          return (
+            <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+              🔀 已修改
+            </Badge>
+          );
+        }
+        return (
+          <Badge variant="outline" className="text-[10px] bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+            📌 跟随
+          </Badge>
+        );
+      },
+      filterFn: "equals",
+    },
+    // 7.6 Commits count
+    {
+      id: "commits",
+      accessorFn: (row) => row.gitHistory?.totalCommits ?? 0,
+      header: ({ column }) => <TableColumnHeader column={column} title="Commits" />,
+      cell: ({ row }) => {
+        const count = row.original.gitHistory?.totalCommits ?? 0;
+        if (count === 0) return <span className="text-xs text-muted-foreground/50">—</span>;
+        return <span className="text-sm tabular-nums">{count}</span>;
+      },
+    },
+    // 7.7 Activity level
+    {
+      id: "activity",
+      accessorFn: (row) => {
+        if (!row.gitHistory?.lastCommitAt) return 0;
+        const days = Math.floor((Date.now() - new Date(row.gitHistory.lastCommitAt).getTime()) / 86400000);
+        if (days <= 7) return 3;
+        if (days <= 30) return 2;
+        if (days <= 90) return 1;
+        return 0;
+      },
+      header: ({ column }) => <TableColumnHeader column={column} title="活跃度" />,
+      cell: ({ row }) => {
+        const history = row.original.gitHistory;
+        if (!history || history.totalCommits === 0) {
+          return <span className="text-xs text-muted-foreground/50">—</span>;
+        }
+        const days = Math.floor((Date.now() - new Date(history.lastCommitAt).getTime()) / 86400000);
+        if (days <= 7) return <span title={`${days}天前`}>🔥</span>;
+        if (days <= 30) return <span title={`${days}天前`}>⚡</span>;
+        if (days <= 90) return <span title={`${days}天前`}>💤</span>;
+        return <span title={`${days}天前`}>⚪</span>;
+      },
+    },
     // 8. Created at
     {
       accessorKey: "createdAt",

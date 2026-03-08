@@ -30,6 +30,9 @@ const COLUMN_LABELS: Record<string, string> = {
   description: "描述",
   lineCount: "行数",
   callStats: "调用统计",
+  upstream: "上游",
+  commits: "Commits",
+  activity: "活跃度",
   createdAt: "创建时间",
   lastModified: "更新时间",
   notes: "备注",
@@ -40,6 +43,7 @@ const GROUPING_OPTIONS = [
   { value: "domain", label: "按领域" },
   { value: "source", label: "按来源" },
   { value: "status", label: "按路由状态" },
+  { value: "upstream", label: "按上游状态" },
 ];
 
 interface TableToolbarProps {
