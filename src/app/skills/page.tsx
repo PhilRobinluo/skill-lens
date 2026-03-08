@@ -21,6 +21,7 @@ import { useAutoRefresh } from "@/hooks/use-sse";
 import type { SkillEntry } from "@/lib/types";
 import type { SkillCallStats } from "@/lib/frequency-scanner";
 import { skillDisplayName } from "@/lib/utils";
+import { useScope } from "@/contexts/scope-context";
 
 const SkillGraph3D = dynamic(
   () => import("@/components/skill-graph-3d").then((mod) => mod.SkillGraph3D),
@@ -123,6 +124,7 @@ const VIEW_MODES: { mode: ViewMode; label: string }[] = [
 function SkillsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { scopeParam } = useScope();
 
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [allSkillNames, setAllSkillNames] = useState<string[]>([]);
@@ -165,7 +167,7 @@ function SkillsPageInner() {
   // Fetch skills
   const fetchSkills = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(scopeParam);
       if (q) params.set("q", q);
       if (source !== "all") params.set("source", source);
 
@@ -193,7 +195,7 @@ function SkillsPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [q, source, claudeStatus]);
+  }, [q, source, claudeStatus, scopeParam]);
 
   useEffect(() => {
     fetchSkills();

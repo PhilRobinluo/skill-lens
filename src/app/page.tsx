@@ -69,11 +69,11 @@ export default function DashboardPage() {
   const [updatesAvailable, setUpdatesAvailable] = useState<number>(0);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const { status: settingsStatus } = useSettings();
-  const { scope } = useScope();
+  const { scope, scopeParam } = useScope();
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/stats");
+      const res = await fetch(`/api/stats?${scopeParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: DashboardStats = await res.json();
       setStats(data);
@@ -81,7 +81,7 @@ export default function DashboardPage() {
     } catch (err) {
       setError(String(err));
     }
-  }, []);
+  }, [scopeParam]);
 
   useEffect(() => {
     fetchStats();

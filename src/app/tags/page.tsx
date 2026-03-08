@@ -34,6 +34,7 @@ import { cleanDescriptionSummary, skillDisplayName } from "@/lib/utils";
 import { useAutoRefresh } from "@/hooks/use-sse";
 import { useSettings } from "@/hooks/use-settings";
 import type { SkillEntry } from "@/lib/types";
+import { useScope } from "@/contexts/scope-context";
 
 // ── Constants ──
 
@@ -66,6 +67,7 @@ const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> 
 // ── Main Component ──
 
 export default function TagsPage() {
+  const { scopeParam } = useScope();
   const [tags, setTags] = useState<TagInfo[]>([]);
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,18 +104,18 @@ export default function TagsPage() {
 
   const fetchTags = useCallback(async () => {
     try {
-      const res = await fetch("/api/tags");
+      const res = await fetch(`/api/tags?${scopeParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setTags(data.tags);
     } catch {
       // silent
     }
-  }, []);
+  }, [scopeParam]);
 
   const fetchSkills = useCallback(async () => {
     try {
-      const res = await fetch("/api/skills");
+      const res = await fetch(`/api/skills?${scopeParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setSkills(data.skills);
@@ -122,7 +124,7 @@ export default function TagsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [scopeParam]);
 
   const fetchAll = useCallback(async () => {
     await Promise.all([fetchTags(), fetchSkills()]);
