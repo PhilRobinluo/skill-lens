@@ -17,6 +17,8 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useScope } from "@/contexts/scope-context";
+import type { ProjectInfo } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -255,6 +257,13 @@ function buildFlowElements(routeTables: ParsedRoute[]): { nodes: Node[]; edges: 
 // ---------------------------------------------------------------------------
 
 export default function ClaudeMdPage() {
+  const { scope, projectPath: scopeProjectPath } = useScope();
+
+  // File list for multi-file mode
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  // null = global CLAUDE.md, string = project path
+  const [activeFile, setActiveFile] = useState<string | null>(null);
+
   // Data states
   const [blameLines, setBlameLines] = useState<BlameLine[]>([]);
   const [history, setHistory] = useState<HistoryCommit[]>([]);
@@ -295,13 +304,35 @@ export default function ClaudeMdPage() {
   const lineRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const renderedDocRef = useRef<HTMLDivElement>(null);
 
+  // Fetch projects list
+  useEffect(() => {
+    fetch("/api/projects")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.projects) setProjects(data.projects); })
+      .catch(() => {});
+  }, []);
+
+  // Sync activeFile with scope changes
+  useEffect(() => {
+    if (scope === "global") {
+      setActiveFile(null);
+    } else if (scope.startsWith("project:") || scope.startsWith("combined:")) {
+      setActiveFile(scopeProjectPath);
+    }
+    // "all" scope → keep current activeFile (user can switch freely)
+  }, [scope, scopeProjectPath]);
+
+  // Build the project param for API calls
+  const projectParam = activeFile ? `project=${encodeURIComponent(activeFile)}` : "";
+
   // --- Data fetching ---
   const fetchAll = useCallback(async () => {
+    const pp = activeFile ? `?project=${encodeURIComponent(activeFile)}` : "";
     try {
       const [blameRes, historyRes, statusRes, notesRes] = await Promise.all([
-        fetch("/api/claude-md/blame"),
-        fetch("/api/claude-md/history"),
-        fetch("/api/claude-md/status"),
+        fetch(`/api/claude-md/blame${pp}`),
+        fetch(`/api/claude-md/history${pp}`),
+        fetch(`/api/claude-md/status${pp}`),
         fetch("/api/claude-md/notes"),
       ]);
 
@@ -326,9 +357,14 @@ export default function ClaudeMdPage() {
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeFile]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    setLoading(true);
+    setSelectedVersion(null);
+    setExpandedDiffs({});
+    fetchAll();
+  }, [fetchAll]);
 
   // --- Version loading ---
   async function loadVersion(sha: string) {
@@ -338,7 +374,7 @@ export default function ClaudeMdPage() {
     }
     setLoadingVersion(true);
     try {
-      const res = await fetch(`/api/claude-md/version?sha=${sha}`);
+      const res = await fetch(`/api/claude-md/version?sha=${sha}${projectParam ? `&${projectParam}` : ""}`);
       if (res.ok) {
         const data = await res.json();
         setSelectedVersionContent(data.content);
@@ -402,7 +438,7 @@ export default function ClaudeMdPage() {
     }
     setLoadingDiffs((prev) => ({ ...prev, [sha]: true }));
     try {
-      const res = await fetch(`/api/claude-md/diff?sha=${sha}`);
+      const res = await fetch(`/api/claude-md/diff?sha=${sha}${projectParam ? `&${projectParam}` : ""}`);
       if (res.ok) {
         const data = await res.json();
         setExpandedDiffs((prev) => ({ ...prev, [sha]: data.diff }));
@@ -493,9 +529,47 @@ export default function ClaudeMdPage() {
 
   return (
     <div className="flex gap-6 px-4 py-6 sm:px-6">
-      {/* ========== Left Sidebar: 历史版本 + 目录 ========== */}
+      {/* ========== Left Sidebar: 文件 + 历史版本 + 目录 ========== */}
       <aside className="hidden w-60 shrink-0 lg:block">
         <div className="sticky top-20 flex max-h-[calc(100vh-100px)] flex-col gap-4">
+
+          {/* ---- 文件列表 (multi-file mode) ---- */}
+          {(() => {
+            // Determine which files to show
+            const files: Array<{ label: string; projectPath: string | null; hasMd: boolean }> = [];
+            if (scope === "all" || scope.startsWith("combined:")) {
+              files.push({ label: "全局 CLAUDE.md", projectPath: null, hasMd: true });
+              for (const p of projects.filter(pr => pr.hasClaudeMd)) {
+                files.push({ label: `${p.name}/CLAUDE.md`, projectPath: p.path, hasMd: true });
+              }
+            }
+            if (files.length < 2) return null;
+            return (
+              <div className="shrink-0">
+                <p className="px-2 pb-1 text-xs font-semibold text-muted-foreground">文件</p>
+                <div className="max-h-[160px] overflow-y-auto rounded-md border">
+                  {files.map((f) => {
+                    const isActive = activeFile === f.projectPath;
+                    return (
+                      <button
+                        key={f.projectPath ?? "__global__"}
+                        type="button"
+                        onClick={() => setActiveFile(f.projectPath)}
+                        className={`flex w-full items-center gap-1.5 border-b px-2 py-1.5 text-left text-xs transition-colors last:border-0 ${
+                          isActive ? "bg-primary/10 font-medium text-primary" : "hover:bg-accent/50"
+                        }`}
+                      >
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        )}
+                        <span className="truncate">{f.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ---- 历史版本 ---- */}
           <div className="shrink-0">
