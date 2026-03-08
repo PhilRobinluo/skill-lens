@@ -29,6 +29,8 @@ export interface SkillEntry {
   tags: SkillTags;
   dependencies: string[];
   notes: string;
+  upstream?: UpstreamInfo;
+  gitHistory?: SkillGitHistory;
 }
 
 export interface RegistryMeta {
@@ -61,7 +63,9 @@ export type FilterableField =
   | "status"
   | "domain"
   | "description"
-  | "lineCount";
+  | "lineCount"
+  | "upstream"
+  | "commits";
 
 export interface FilterCondition {
   id: string;
@@ -139,4 +143,63 @@ export interface DashboardStats {
   domainDistribution: Record<string, number>;
   sourceDistribution: Record<string, number>;
   recentChanges: Array<{ name: string; lastModified: string }>;
+  forkStats?: ForkStats;
+  evolutionStats?: EvolutionStats;
+}
+
+// ---------- Upstream Tracking ----------
+
+export type ModificationType = "bugfix" | "capability" | "config";
+
+export interface SkillModification {
+  file: string;
+  type: ModificationType;
+  summary: string;
+}
+
+export type UpstreamStatus = "original" | "following" | "modified";
+
+export interface UpstreamInfo {
+  origin: string;
+  originUrl?: string;
+  baseCommitSha?: string;
+  forkedAt?: string;
+  status: UpstreamStatus;
+  localModified: boolean;
+  modifications: SkillModification[];
+  lastReconciled?: string;
+}
+
+// ---------- Git History ----------
+
+export interface GitCommitInfo {
+  sha: string;
+  date: string;
+  author: string;
+  message: string;
+  additions: number;
+  deletions: number;
+}
+
+export interface SkillGitHistory {
+  totalCommits: number;
+  createdAt: string;
+  lastCommitAt: string;
+  hasUncommittedChanges: boolean;
+  contributors: string[];
+  timeline: GitCommitInfo[];
+}
+
+// ---------- Extended Dashboard Stats ----------
+
+export interface ForkStats {
+  totalWithUpstream: number;
+  modified: number;
+  needsReconciliation: number;
+}
+
+export interface EvolutionStats {
+  activeThisMonth: number;
+  newThisMonth: number;
+  mostActive: Array<{ name: string; commits: number }>;
 }
