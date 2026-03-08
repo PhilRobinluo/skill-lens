@@ -26,7 +26,8 @@ import { ErrorMessage } from "@/components/error-message";
 import { HealthReportCard } from "@/components/health-report-card";
 import { Separator } from "@/components/ui/separator";
 import { useSettings } from "@/hooks/use-settings";
-import type { DashboardStats } from "@/lib/types";
+import { useScope } from "@/contexts/scope-context";
+import type { DashboardStats, ProjectInfo } from "@/lib/types";
 import { skillDisplayName } from "@/lib/utils";
 
 const PIE_COLORS = [
@@ -66,7 +67,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatesAvailable, setUpdatesAvailable] = useState<number>(0);
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const { status: settingsStatus } = useSettings();
+  const { scope } = useScope();
 
   const fetchStats = useCallback(async () => {
     try {
@@ -83,6 +86,13 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  useEffect(() => {
+    fetch("/api/projects")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.projects) setProjects(data.projects); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/upstream/check")
@@ -122,8 +132,20 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">总览</h1>
-        <p className="text-sm text-muted-foreground">技能生态全局视图 — 数量、分布、健康度一目了然</p>
+        <h1 className="text-2xl font-bold tracking-tight">
+          总览
+          {scope !== "global" && (
+            <span className="ml-2 text-base font-normal text-muted-foreground">
+              · {scope.startsWith("combined:") ? "复合视角" : "项目视角"}
+            </span>
+          )}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {scope === "global"
+            ? `技能生态全局视图 — ${projects.length} 个项目 · 数量、分布、健康度一目了然`
+            : "当前视角下的技能概览"
+          }
+        </p>
       </div>
 
       {/* Row 1: Stat Cards */}
@@ -322,7 +344,45 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Row 2.5: AI Health Report */}
+      {/* Row 2.5: Project Ecosystem */}
+      {scope === "global" && projects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">项目生态</CardTitle>
+            <CardDescription>
+              {projects.length} 个项目 · {projects.filter(p => p.hasSkills).length} 个有项目级 Skill · {projects.filter(p => p.hasClaudeMd).length} 个有 CLAUDE.md
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((project) => (
+                <div
+                  key={project.path}
+                  className="flex items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-accent/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{project.name}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      {project.hasClaudeMd && (
+                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                          CLAUDE.md
+                        </span>
+                      )}
+                      {project.skillCount > 0 && (
+                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          {project.skillCount} Skill
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Row 2.6: AI Health Report */}
       <HealthReportCard hasApiKey={settingsStatus?.hasApiKey ?? false} />
 
       {/* Row 3: Recent Changes */}

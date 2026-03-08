@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SettingsDialog } from "@/components/settings-dialog";
+import { ScopeSelector } from "@/components/scope-selector";
 
 const links = [
-  { href: "/", label: "总览" },
   { href: "/tags", label: "管理" },
   { href: "/skills", label: "浏览" },
-  { href: "/routes", label: "路由表" },
-  { href: "/draft", label: "编排" },
+  { href: "/orchestration", label: "编排" },
 ];
 
 export function Nav() {
@@ -20,16 +19,22 @@ export function Nav() {
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-4 sm:gap-8">
-          <span className="text-lg font-bold tracking-tight">技能透镜</span>
+        <div className="flex items-center gap-4 sm:gap-6">
+          {/* Brand name = home link + scope selector */}
+          <div className="flex items-center gap-0.5">
+            <Link
+              href="/"
+              className="text-lg font-bold tracking-tight hover:text-primary transition-colors"
+            >
+              技能透镜
+            </Link>
+            <ScopeSelector />
+          </div>
 
           {/* Desktop nav links */}
           <div className="hidden items-center gap-1 sm:flex">
             {links.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
+              const isActive = pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}
@@ -84,11 +89,19 @@ export function Nav() {
       {mobileOpen && (
         <div className="border-t px-4 pb-3 pt-2 sm:hidden">
           <div className="flex flex-col gap-1">
+            <Link
+              href="/"
+              onClick={() => setMobileOpen(false)}
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                pathname === "/"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              总览
+            </Link>
             {links.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
+              const isActive = pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}

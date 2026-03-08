@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
+import { ScopeProvider } from "@/contexts/scope-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,8 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Nav />
-        <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
+        <ScopeProvider>
+          <Nav />
+          <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
+        </ScopeProvider>
       </body>
     </html>
   );
