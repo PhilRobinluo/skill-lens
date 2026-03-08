@@ -601,6 +601,41 @@ const MOD_LABELS: Record<ModificationType, { label: string; className: string }>
 
 function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () => void }) {
   const upstream = skill.upstream;
+  const [updateInfo, setUpdateInfo] = useState<{ commitsAvailable: number; changelog: Array<{ sha: string; date: string; author: string; message: string }> } | null>(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
+
+  // Check for updates when tab opens
+  useEffect(() => {
+    if (!upstream) return;
+    let cancelled = false;
+
+    async function checkUpdates() {
+      setUpdateLoading(true);
+      try {
+        const res = await fetch("/api/upstream/check");
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          // Find update info matching this skill's origin
+          const match = data.updates?.find((u: any) =>
+            upstream!.origin.includes(u.marketplace) ||
+            upstream!.origin.includes(u.pluginName)
+          );
+          if (match) {
+            setUpdateInfo({
+              commitsAvailable: match.commitsAvailable,
+              changelog: match.changelog,
+            });
+          }
+        }
+      } catch { /* ignore */ } finally {
+        if (!cancelled) setUpdateLoading(false);
+      }
+    }
+
+    checkUpdates();
+    return () => { cancelled = true; };
+  }, [upstream]);
 
   if (!upstream) {
     return (
@@ -658,6 +693,51 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
           </span>
         </div>
       </section>
+
+      {/* Update status */}
+      {updateLoading && (
+        <p className="text-xs text-muted-foreground">检查更新中...</p>
+      )}
+
+      {updateInfo && updateInfo.commitsAvailable > 0 && (
+        <section className="space-y-2">
+          <Separator />
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-muted-foreground">可用更新</h3>
+            <Badge variant="outline" className="text-xs text-blue-600 dark:text-blue-400">
+              {updateInfo.commitsAvailable} 个新提交
+            </Badge>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-full justify-start text-xs"
+            onClick={() => setShowChangelog(!showChangelog)}
+          >
+            {showChangelog ? "▼ 收起变更日志" : "▶ 查看变更日志"}
+          </Button>
+          {showChangelog && (
+            <div className="max-h-[200px] overflow-auto rounded-md border bg-muted/20 p-2 space-y-1.5">
+              {updateInfo.changelog.map((c) => (
+                <div key={c.sha} className="text-xs">
+                  <div className="flex items-center gap-2">
+                    <code className="font-mono text-muted-foreground">{c.sha.slice(0, 7)}</code>
+                    <span className="flex-1 truncate">{c.message}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground/60">
+                    <span>{c.author}</span>
+                    <span>{new Date(c.date).toLocaleDateString("zh-CN")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {updateInfo && updateInfo.commitsAvailable === 0 && (
+        <p className="text-xs text-green-600 dark:text-green-400">✓ 已是最新版本</p>
+      )}
 
       {upstream.modifications.length > 0 && (
         <section className="space-y-2">

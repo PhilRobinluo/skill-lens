@@ -65,6 +65,7 @@ function formatRelativeTime(dateStr: string): string {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [updatesAvailable, setUpdatesAvailable] = useState<number>(0);
   const { status: settingsStatus } = useSettings();
 
   const fetchStats = useCallback(async () => {
@@ -82,6 +83,17 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  useEffect(() => {
+    fetch("/api/upstream/check")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.summary?.updatesAvailable != null) {
+          setUpdatesAvailable(data.summary.updatesAvailable);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useAutoRefresh(fetchStats);
 
@@ -253,7 +265,7 @@ export default function DashboardPage() {
               <CardDescription>上游追踪与对账状态</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold tabular-nums">{stats.forkStats.totalWithUpstream}</p>
                   <p className="text-xs text-muted-foreground">有上游</p>
@@ -267,6 +279,12 @@ export default function DashboardPage() {
                     {stats.forkStats.needsReconciliation}
                   </p>
                   <p className="text-xs text-muted-foreground">需对账</p>
+                </div>
+                <div>
+                  <p className={`text-2xl font-bold tabular-nums ${updatesAvailable > 0 ? "text-blue-500" : ""}`}>
+                    {updatesAvailable}
+                  </p>
+                  <p className="text-xs text-muted-foreground">可更新</p>
                 </div>
               </div>
             </CardContent>
