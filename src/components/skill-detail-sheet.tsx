@@ -17,16 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import Markdown from "react-markdown";
 import { useSkillMutations } from "@/hooks/use-skill-mutations";
 import { cleanDescriptionFull, skillDisplayName } from "@/lib/utils";
-import type { SkillEntry, SkillGitHistory, ModificationType } from "@/lib/types";
-
-interface FileNode {
-  name: string;
-  relativePath: string;
-  type: "file" | "directory";
-  size?: number;
-  lastModified?: string;
-  children?: FileNode[];
-}
+import type { SkillEntry, SkillGitHistory, ModificationType, FileNode } from "@/lib/types";
 
 interface SkillDetailSheetProps {
   skill: SkillEntry | null;
@@ -63,7 +54,8 @@ export function SkillDetailSheet({
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [fileContentLoading, setFileContentLoading] = useState(false);
-  const [fileContentPath, setFileContentPath] = useState<string | null>(null);
+  const [fileTreeError, setFileTreeError] = useState<string | null>(null);
+  const [fileContentError, setFileContentError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [gitHistory, setGitHistory] = useState<SkillGitHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -80,7 +72,8 @@ export function SkillDetailSheet({
       setSelectedFile(null);
       setFileContent(null);
       setFileContentLoading(false);
-      setFileContentPath(null);
+      setFileTreeError(null);
+      setFileContentError(null);
       setActiveTab("overview");
       setGitHistory(null);
       setHistoryLoading(false);
@@ -154,26 +147,12 @@ export function SkillDetailSheet({
     if (v === "timeline" && !gitHistory && !historyError) loadGitHistory();
   }
 
-  async function loadFileTree() {
-    if (!skill || fileTreeLoading || fileTree) return;
-    setFileTreeLoading(true);
-    try {
-      const res = await fetch(`/api/skills/${encodeURIComponent(skill.name)}/files`);
-      if (res.ok) {
-        const data = await res.json();
-        setFileTree(data.files);
-      }
-    } catch { /* ignore */ } finally {
-      setFileTreeLoading(false);
-    }
-  }
-
   async function loadFileContent(relativePath: string) {
     if (!skill) return;
     setSelectedFile(relativePath);
     setFileContentLoading(true);
     setFileContent(null);
-    setFileContentPath(null);
+    setFileContentError(null);
     try {
       const res = await fetch(
         `/api/skills/${encodeURIComponent(skill.name)}/content?file=${encodeURIComponent(relativePath)}`
@@ -181,9 +160,13 @@ export function SkillDetailSheet({
       if (res.ok) {
         const data = await res.json();
         setFileContent(data.content);
-        setFileContentPath(data.path);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setFileContentError(data.error || `HTTP ${res.status}`);
       }
-    } catch { /* ignore */ } finally {
+    } catch (err) {
+      setFileContentError(String(err));
+    } finally {
       setFileContentLoading(false);
     }
   }
@@ -198,11 +181,32 @@ export function SkillDetailSheet({
   }
 
   // Auto-load file tree when panel opens
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (skill && open && !fileTree && !fileTreeLoading) {
-      loadFileTree();
+    if (!skill || !open) return;
+
+    let cancelled = false;
+    async function fetchTree() {
+      try {
+        const res = await fetch(`/api/skills/${encodeURIComponent(skill!.name)}/files`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setFileTree(data.files);
+        } else if (!cancelled) {
+          const data = await res.json().catch(() => ({}));
+          setFileTreeError(data.error || `HTTP ${res.status}`);
+        }
+      } catch (err) {
+        if (!cancelled) setFileTreeError(String(err));
+      } finally {
+        if (!cancelled) setFileTreeLoading(false);
+      }
     }
+
+    setFileTreeLoading(true);
+    setFileTreeError(null);
+    fetchTree();
+
+    return () => { cancelled = true; };
   }, [skill, open]);
 
   if (!skill) return null;
@@ -401,6 +405,10 @@ export function SkillDetailSheet({
               <p className="text-sm text-muted-foreground">加载中...</p>
             )}
 
+            {fileTreeError && (
+              <p className="text-xs text-red-500">{fileTreeError}</p>
+            )}
+
             {fileTree && fileTree.length > 0 && (
               <div className="rounded-md border bg-muted/20 p-2">
                 <FileTreeView
@@ -435,6 +443,8 @@ export function SkillDetailSheet({
                 </div>
                 {fileContentLoading ? (
                   <p className="text-sm text-muted-foreground">加载中...</p>
+                ) : fileContentError ? (
+                  <p className="text-xs text-red-500">{fileContentError}</p>
                 ) : fileContent ? (
                   <pre className="max-h-[400px] overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-5">
                     <code>{fileContent}</code>

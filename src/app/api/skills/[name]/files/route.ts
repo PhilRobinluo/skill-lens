@@ -3,17 +3,10 @@ import fsp from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
+import type { FileNode } from "@/lib/types";
 
-interface FileNode {
-  name: string;
-  relativePath: string;
-  type: "file" | "directory";
-  size?: number;
-  lastModified?: string;
-  children?: FileNode[];
-}
-
-async function buildFileTree(dirPath: string, basePath: string): Promise<FileNode[]> {
+async function buildFileTree(dirPath: string, basePath: string, depth = 0): Promise<FileNode[]> {
+  if (depth > 5) return [];
   const entries = await fsp.readdir(dirPath, { withFileTypes: true });
   const nodes: FileNode[] = [];
 
@@ -30,7 +23,7 @@ async function buildFileTree(dirPath: string, basePath: string): Promise<FileNod
     const relativePath = path.relative(basePath, fullPath);
 
     if (entry.isDirectory()) {
-      const children = await buildFileTree(fullPath, basePath);
+      const children = await buildFileTree(fullPath, basePath, depth + 1);
       nodes.push({
         name: entry.name,
         relativePath,

@@ -49,7 +49,8 @@ export async function POST(
     const filePath = path.resolve(skill.path, fileParam);
 
     // Security: prevent path traversal
-    if (!filePath.startsWith(skill.path)) {
+    const skillDir = skill.path.endsWith(path.sep) ? skill.path : skill.path + path.sep;
+    if (!filePath.startsWith(skillDir) && filePath !== skill.path) {
       return NextResponse.json(
         { error: "Access denied: path outside skill directory" },
         { status: 403 },
@@ -57,10 +58,10 @@ export async function POST(
     }
 
     tryOpenInEditor(filePath);
-    return NextResponse.json({ ok: true, opened: filePath, method: "editor" });
+    return NextResponse.json({ ok: true, method: "editor" });
   }
 
   // Default: open directory in Finder
   execFile("open", ["-R", skill.path]);
-  return NextResponse.json({ ok: true, opened: skill.path, method: "finder" });
+  return NextResponse.json({ ok: true, method: "finder" });
 }

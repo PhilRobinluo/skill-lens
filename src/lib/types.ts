@@ -190,6 +190,17 @@ export interface SkillGitHistory {
   timeline: GitCommitInfo[];
 }
 
+// ---------- File Browser ----------
+
+export interface FileNode {
+  name: string;
+  relativePath: string;
+  type: "file" | "directory";
+  size?: number;
+  lastModified?: string;
+  children?: FileNode[];
+}
+
 // ---------- Extended Dashboard Stats ----------
 
 export interface ForkStats {

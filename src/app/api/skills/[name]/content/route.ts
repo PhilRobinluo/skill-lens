@@ -32,10 +32,35 @@ export async function GET(
 
     // Resolve and validate path — prevent directory traversal
     const filePath = path.resolve(skill.path, fileParam);
-    if (!filePath.startsWith(skill.path)) {
+    const skillDir = skill.path.endsWith(path.sep) ? skill.path : skill.path + path.sep;
+    if (!filePath.startsWith(skillDir) && filePath !== skill.path) {
       return NextResponse.json(
         { error: "Access denied: path outside skill directory" },
         { status: 403 },
+      );
+    }
+
+    const TEXT_EXTENSIONS = new Set([
+      '.md', '.txt', '.json', '.yaml', '.yml', '.ts', '.js', '.tsx', '.jsx',
+      '.css', '.html', '.xml', '.csv', '.toml', '.ini', '.cfg', '.conf',
+      '.sh', '.bash', '.zsh', '.py', '.rb', '.go', '.rs', '.java',
+    ]);
+
+    // Check file extension
+    const ext = path.extname(filePath).toLowerCase();
+    if (!TEXT_EXTENSIONS.has(ext) && ext !== '') {
+      return NextResponse.json(
+        { error: `Unsupported file type: ${ext}` },
+        { status: 415 },
+      );
+    }
+
+    // Check file size (max 512KB)
+    const stat = await fsp.stat(filePath);
+    if (stat.size > 512 * 1024) {
+      return NextResponse.json(
+        { error: "File too large (max 512KB)" },
+        { status: 413 },
       );
     }
 
