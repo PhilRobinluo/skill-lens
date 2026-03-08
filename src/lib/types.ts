@@ -214,3 +214,23 @@ export interface EvolutionStats {
   newThisMonth: number;
   mostActive: Array<{ name: string; commits: number }>;
 }
+
+// ---------- Upstream Update Detection ----------
+
+export interface UpstreamUpdateInfo {
+  marketplace: string;
+  pluginName: string;
+  installedSha: string;
+  latestSha: string | null;
+  commitsAvailable: number;
+  changelog: UpstreamCommit[];
+  hasUpdate: boolean;
+  lastChecked: string;
+}
+
+export interface UpstreamCommit {
+  sha: string;
+  date: string;
+  author: string;
+  message: string;
+}
