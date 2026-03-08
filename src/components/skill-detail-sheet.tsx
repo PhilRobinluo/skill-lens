@@ -456,7 +456,7 @@ export function SkillDetailSheet({
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-4">
-              <TimelineTab history={gitHistory} loading={historyLoading} error={historyError} />
+              <TimelineTab history={gitHistory} loading={historyLoading} error={historyError} skillName={skill.name} />
             </TabsContent>
 
             <TabsContent value="upstream" className="pt-4">
@@ -549,7 +549,31 @@ function FileTreeView({
   );
 }
 
-function TimelineTab({ history, loading, error }: { history: SkillGitHistory | null; loading: boolean; error: string | null }) {
+function TimelineTab({ history, loading, error, skillName }: { history: SkillGitHistory | null; loading: boolean; error: string | null; skillName: string }) {
+  const [expandedDiffs, setExpandedDiffs] = useState<Record<string, string>>({});
+  const [loadingDiffs, setLoadingDiffs] = useState<Record<string, boolean>>({});
+
+  async function loadCommitDiff(sha: string) {
+    if (expandedDiffs[sha] !== undefined) {
+      setExpandedDiffs((prev) => {
+        const next = { ...prev };
+        delete next[sha];
+        return next;
+      });
+      return;
+    }
+    setLoadingDiffs((prev) => ({ ...prev, [sha]: true }));
+    try {
+      const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}/diff?sha=${sha}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedDiffs((prev) => ({ ...prev, [sha]: data.diff }));
+      }
+    } catch { /* ignore */ } finally {
+      setLoadingDiffs((prev) => ({ ...prev, [sha]: false }));
+    }
+  }
+
   if (loading) return <p className="text-sm text-muted-foreground">加载中...</p>;
   if (error) return <p className="text-xs text-red-500">{error}</p>;
   if (!history || history.totalCommits === 0) {
@@ -585,10 +609,44 @@ function TimelineTab({ history, loading, error }: { history: SkillGitHistory | n
                   </span>
                 )}
               </div>
+              <button
+                type="button"
+                className="mt-1 rounded px-2 py-0.5 text-[11px] text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
+                onClick={() => loadCommitDiff(commit.sha)}
+              >
+                {loadingDiffs[commit.sha] ? "加载中..." : expandedDiffs[commit.sha] !== undefined ? "收起变更" : "查看变更"}
+              </button>
+              {expandedDiffs[commit.sha] !== undefined && (
+                <TimelineDiffViewer diff={expandedDiffs[commit.sha]} />
+              )}
             </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function TimelineDiffViewer({ diff }: { diff: string }) {
+  if (!diff.trim()) {
+    return <p className="py-1 text-xs text-muted-foreground/60 italic">无文件变更</p>;
+  }
+  const lines = diff.split("\n");
+  return (
+    <div className="mt-1 max-h-[200px] overflow-auto rounded border bg-muted/10 font-mono text-[10px]">
+      {lines.map((line, i) => {
+        let cls = "px-2 py-px whitespace-pre-wrap break-all";
+        if (line.startsWith("+") && !line.startsWith("+++")) {
+          cls += " bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300";
+        } else if (line.startsWith("-") && !line.startsWith("---")) {
+          cls += " bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300";
+        } else if (line.startsWith("@@")) {
+          cls += " bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300";
+        } else {
+          cls += " text-muted-foreground";
+        }
+        return <div key={i} className={cls}>{line || "\u00A0"}</div>;
+      })}
     </div>
   );
 }
