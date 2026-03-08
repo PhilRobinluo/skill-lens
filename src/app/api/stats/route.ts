@@ -53,6 +53,32 @@ export async function GET(): Promise<NextResponse> {
       .slice(0, 10)
       .map((s) => ({ name: s.name, lastModified: s.lastModified }));
 
+    // Fork stats
+    const skillsWithUpstream = skills.filter((s) => s.upstream);
+    const modifiedForks = skillsWithUpstream.filter(
+      (s) => s.upstream?.status === "modified",
+    );
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const needsReconciliation = skillsWithUpstream.filter((s) => {
+      if (!s.upstream?.lastReconciled) return true;
+      return new Date(s.upstream.lastReconciled).getTime() < thirtyDaysAgo;
+    });
+
+    // Evolution stats
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const activeThisMonth = skills.filter(
+      (s) => s.gitHistory && new Date(s.gitHistory.lastCommitAt) >= monthStart,
+    );
+    const newThisMonth = skills.filter(
+      (s) => s.gitHistory && new Date(s.gitHistory.createdAt) >= monthStart,
+    );
+    const mostActive = skills
+      .filter((s) => s.gitHistory && s.gitHistory.totalCommits > 1)
+      .sort((a, b) => (b.gitHistory?.totalCommits ?? 0) - (a.gitHistory?.totalCommits ?? 0))
+      .slice(0, 5)
+      .map((s) => ({ name: s.name, commits: s.gitHistory!.totalCommits }));
+
     const stats: DashboardStats = {
       totalSkills: skills.length,
       routedSkills,
@@ -60,6 +86,16 @@ export async function GET(): Promise<NextResponse> {
       domainDistribution,
       sourceDistribution,
       recentChanges,
+      forkStats: {
+        totalWithUpstream: skillsWithUpstream.length,
+        modified: modifiedForks.length,
+        needsReconciliation: needsReconciliation.length,
+      },
+      evolutionStats: {
+        activeThisMonth: activeThisMonth.length,
+        newThisMonth: newThisMonth.length,
+        mostActive,
+      },
     };
 
     return NextResponse.json(stats);
