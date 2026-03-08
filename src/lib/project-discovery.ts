@@ -46,8 +46,8 @@ export async function discoverProjects(): Promise<ProjectInfo[]> {
       const hasClaudeMd = fs.existsSync(claudeMdPath);
       const hasSkills = fs.existsSync(skillsDir);
 
-      // Skip if no CLAUDE.md and no skills
-      if (!hasClaudeMd && !hasSkills) continue;
+      // A project is recognized only if it has CLAUDE.md (the Claude management marker)
+      if (!hasClaudeMd) continue;
 
       let skillCount = 0;
       if (hasSkills) {

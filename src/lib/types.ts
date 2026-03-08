@@ -31,6 +31,8 @@ export interface SkillEntry {
   notes: string;
   upstream?: UpstreamInfo;
   gitHistory?: SkillGitHistory;
+  /** Scope ownership: "global" for ~/.claude/skills, project path for project-level skills */
+  belongsTo: string;
 }
 
 export interface RegistryMeta {

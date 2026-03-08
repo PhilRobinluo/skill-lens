@@ -47,7 +47,7 @@ async function doInit(): Promise<void> {
     );
 
     // Start file watcher for live updates
-    startWatcher();
+    await startWatcher();
 
     initialized = true;
   } catch (err) {

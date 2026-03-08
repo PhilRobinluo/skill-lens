@@ -10,6 +10,7 @@ import {
   PLUGINS_CACHE_DIR,
   CLAUDE_MD_PATH,
 } from "./config";
+import { discoverProjects } from "./project-discovery";
 
 // ---------------------------------------------------------------------------
 // parseSkillMd — extract description from SKILL.md content
@@ -180,6 +181,7 @@ async function buildSkillEntry(
   name: string,
   skillDir: string,
   skillMdPath: string,
+  belongsTo: string = "global",
 ): Promise<SkillEntry> {
   const content = await fsp.readFile(skillMdPath, "utf-8");
   const stat = await fsp.stat(skillMdPath);
@@ -200,7 +202,48 @@ async function buildSkillEntry(
     },
     dependencies: [],
     notes: "",
+    belongsTo,
   };
+}
+
+// ---------------------------------------------------------------------------
+// scanProjectSkills — scan .claude/skills/ in discovered projects
+// ---------------------------------------------------------------------------
+export async function scanProjectSkills(): Promise<Record<string, SkillEntry>> {
+  const skills: Record<string, SkillEntry> = {};
+  const projects = await discoverProjects();
+
+  for (const project of projects) {
+    if (!project.hasSkills) continue;
+
+    const skillsDir = path.join(project.path, ".claude", "skills");
+    if (!fs.existsSync(skillsDir)) continue;
+
+    let entries: fs.Dirent[];
+    try {
+      entries = await fsp.readdir(skillsDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name === "_archived" || entry.name.startsWith(".")) continue;
+
+      const skillDir = path.join(skillsDir, entry.name);
+      const skillMdPath = path.join(skillDir, "SKILL.md");
+
+      if (!fs.existsSync(skillMdPath)) continue;
+
+      // Key: "project:<projectName>/<skillName>" to avoid collisions with global skills
+      const key = `project:${project.name}/${entry.name}`;
+      const skillEntry = await buildSkillEntry(entry.name, skillDir, skillMdPath, project.path);
+      skillEntry.name = key;
+      skills[key] = skillEntry;
+    }
+  }
+
+  return skills;
 }
 
 // ---------------------------------------------------------------------------
@@ -300,7 +343,11 @@ export async function scanAll(
 ): Promise<SkillsRegistry> {
   const skills = await scanSkillsDirectory();
 
-  // Parse CLAUDE.md for routing-table references
+  // Scan project-level skills
+  const projectSkills = await scanProjectSkills();
+  Object.assign(skills, projectSkills);
+
+  // Parse global CLAUDE.md for routing-table references
   let claudeMdRefs: Record<string, Array<{ table: string; trigger: string }>> =
     {};
   try {
@@ -312,7 +359,27 @@ export async function scanAll(
     // CLAUDE.md not found or unreadable — skip
   }
 
-  // Attach CLAUDE.md refs to skills
+  // Parse project-level CLAUDE.md files for routing-table references
+  const projects = await discoverProjects();
+  for (const project of projects) {
+    if (!project.hasClaudeMd) continue;
+    try {
+      const projectClaudeMdPath = path.join(project.path, "CLAUDE.md");
+      const content = await fsp.readFile(projectClaudeMdPath, "utf-8");
+      const projectRefs = parseClaudeMd(content);
+      // Attach refs to project-level skills (match by skill name within project)
+      for (const [skillName, refs] of Object.entries(projectRefs)) {
+        const projectKey = `project:${project.name}/${skillName}`;
+        if (skills[projectKey]) {
+          skills[projectKey].claudeMdRefs = refs;
+        }
+      }
+    } catch {
+      // skip
+    }
+  }
+
+  // Attach global CLAUDE.md refs to global skills
   for (const [skillName, refs] of Object.entries(claudeMdRefs)) {
     if (skills[skillName]) {
       skills[skillName].claudeMdRefs = refs;

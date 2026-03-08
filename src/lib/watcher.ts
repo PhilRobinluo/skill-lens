@@ -1,7 +1,9 @@
+import path from "node:path";
 import { watch, type FSWatcher } from "chokidar";
 import { scanAll } from "./scanner";
 import { readRegistry, writeRegistry } from "./registry";
 import { SKILL_DIRS, PLUGINS_CACHE_DIR, CLAUDE_MD_PATH } from "./config";
+import { discoverProjects } from "./project-discovery";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,11 +82,27 @@ function debouncedRescan(eventType: string, filePath: string): void {
 // ---------------------------------------------------------------------------
 // startWatcher — begin watching skill directories and CLAUDE.md
 // ---------------------------------------------------------------------------
-export function startWatcher(): void {
+export async function startWatcher(): Promise<void> {
   if (watcher) return; // Already running
 
+  // Collect project-level paths to watch
+  const projectPaths: string[] = [];
+  try {
+    const projects = await discoverProjects();
+    for (const project of projects) {
+      // Watch project CLAUDE.md
+      projectPaths.push(path.join(project.path, "CLAUDE.md"));
+      // Watch project .claude/skills/ if it exists
+      if (project.hasSkills) {
+        projectPaths.push(path.join(project.path, ".claude", "skills"));
+      }
+    }
+  } catch {
+    // If project discovery fails, just watch global paths
+  }
+
   watcher = watch(
-    [...SKILL_DIRS, PLUGINS_CACHE_DIR, CLAUDE_MD_PATH],
+    [...SKILL_DIRS, PLUGINS_CACHE_DIR, CLAUDE_MD_PATH, ...projectPaths],
     {
       ignoreInitial: true,
       persistent: true,
