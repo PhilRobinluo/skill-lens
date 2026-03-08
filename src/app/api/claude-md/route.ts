@@ -1,11 +1,22 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
-export async function GET(): Promise<NextResponse> {
+/**
+ * GET /api/claude-md?project=<path>
+ * - No project param → global ~/.claude/CLAUDE.md
+ * - project=<path> → <path>/CLAUDE.md
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const claudeMdPath = path.join(os.homedir(), ".claude", "CLAUDE.md");
+    const url = new URL(request.url);
+    const projectPath = url.searchParams.get("project");
+
+    const claudeMdPath = projectPath
+      ? path.join(projectPath, "CLAUDE.md")
+      : path.join(os.homedir(), ".claude", "CLAUDE.md");
+
     const content = await fsp.readFile(claudeMdPath, "utf-8");
 
     return NextResponse.json({

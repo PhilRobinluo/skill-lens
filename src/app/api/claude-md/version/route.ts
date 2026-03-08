@@ -1,30 +1,30 @@
 import { promisify } from "node:util";
 import { execFile as execFileCb } from "node:child_process";
-import path from "node:path";
-import os from "node:os";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { resolveClaudeMdPaths } from "@/lib/claude-md-paths";
 
 const execFile = promisify(execFileCb);
 
 /**
- * GET /api/claude-md/version?sha=<commit-sha>
+ * GET /api/claude-md/version?sha=<commit-sha>&project=<path>
  * Returns the CLAUDE.md content at a specific historical version.
  */
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url);
   const sha = url.searchParams.get("sha");
+  const projectPath = url.searchParams.get("project");
 
   if (!sha || !/^[0-9a-f]{4,40}$/i.test(sha)) {
     return NextResponse.json({ error: "Invalid or missing ?sha= parameter" }, { status: 400 });
   }
 
-  const claudeDir = path.join(os.homedir(), ".claude");
+  const { gitCwd, relativePath } = resolveClaudeMdPaths(projectPath);
 
   try {
     const { stdout } = await execFile(
       "git",
-      ["show", `${sha}:CLAUDE.md`],
-      { cwd: claudeDir, maxBuffer: 2 * 1024 * 1024 },
+      ["show", `${sha}:${relativePath}`],
+      { cwd: gitCwd, maxBuffer: 2 * 1024 * 1024 },
     );
 
     return NextResponse.json({
