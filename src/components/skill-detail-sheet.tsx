@@ -19,6 +19,15 @@ import { useSkillMutations } from "@/hooks/use-skill-mutations";
 import { cleanDescriptionFull, skillDisplayName } from "@/lib/utils";
 import type { SkillEntry, SkillGitHistory, ModificationType } from "@/lib/types";
 
+interface FileNode {
+  name: string;
+  relativePath: string;
+  type: "file" | "directory";
+  size?: number;
+  lastModified?: string;
+  children?: FileNode[];
+}
+
 interface SkillDetailSheetProps {
   skill: SkillEntry | null;
   allSkillNames: string[];
@@ -49,10 +58,12 @@ export function SkillDetailSheet({
   const [notes, setNotes] = useState("");
   const [domainSuggestions, setDomainSuggestions] = useState<string[]>([]);
   const [showDomainSuggestions, setShowDomainSuggestions] = useState(false);
-  const [rawContent, setRawContent] = useState<string | null>(null);
-  const [rawContentPath, setRawContentPath] = useState<string | null>(null);
-  const [rawLoading, setRawLoading] = useState(false);
-  const [rawError, setRawError] = useState<string | null>(null);
+  const [fileTree, setFileTree] = useState<FileNode[] | null>(null);
+  const [fileTreeLoading, setFileTreeLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fileContentLoading, setFileContentLoading] = useState(false);
+  const [fileContentPath, setFileContentPath] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [gitHistory, setGitHistory] = useState<SkillGitHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -64,10 +75,12 @@ export function SkillDetailSheet({
       setDomains(skill.tags.domain.filter((d) => d !== "未分类"));
       setNotes(skill.notes);
       setDomainInput("");
-      setRawContent(null);
-      setRawContentPath(null);
-      setRawError(null);
-      setRawLoading(false);
+      setFileTree(null);
+      setFileTreeLoading(false);
+      setSelectedFile(null);
+      setFileContent(null);
+      setFileContentLoading(false);
+      setFileContentPath(null);
       setActiveTab("overview");
       setGitHistory(null);
       setHistoryLoading(false);
@@ -141,32 +154,56 @@ export function SkillDetailSheet({
     if (v === "timeline" && !gitHistory && !historyError) loadGitHistory();
   }
 
-  async function handleLoadRawContent() {
-    if (!skill || rawLoading || rawContent) return;
-
-    setRawLoading(true);
-    setRawError(null);
-
+  async function loadFileTree() {
+    if (!skill || fileTreeLoading || fileTree) return;
+    setFileTreeLoading(true);
     try {
-      const res = await fetch(
-        `/api/skills/${encodeURIComponent(skill.name)}/content`,
-      );
-      if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
+      const res = await fetch(`/api/skills/${encodeURIComponent(skill.name)}/files`);
+      if (res.ok) {
+        const data = await res.json();
+        setFileTree(data.files);
       }
-      const data = (await res.json()) as {
-        content: string;
-        path: string;
-      };
-      setRawContent(data.content);
-      setRawContentPath(data.path);
-    } catch (err) {
-      setRawError(String(err));
-    } finally {
-      setRawLoading(false);
+    } catch { /* ignore */ } finally {
+      setFileTreeLoading(false);
     }
   }
+
+  async function loadFileContent(relativePath: string) {
+    if (!skill) return;
+    setSelectedFile(relativePath);
+    setFileContentLoading(true);
+    setFileContent(null);
+    setFileContentPath(null);
+    try {
+      const res = await fetch(
+        `/api/skills/${encodeURIComponent(skill.name)}/content?file=${encodeURIComponent(relativePath)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setFileContent(data.content);
+        setFileContentPath(data.path);
+      }
+    } catch { /* ignore */ } finally {
+      setFileContentLoading(false);
+    }
+  }
+
+  function openFileInEditor(relativePath?: string) {
+    if (!skill) return;
+    fetch(`/api/skills/${encodeURIComponent(skill.name)}/open`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(relativePath ? { file: relativePath } : {}),
+    });
+  }
+
+  // Auto-load file tree when panel opens
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (skill && open && !fileTree && !fileTreeLoading) {
+      loadFileTree();
+    }
+  }, [skill, open]);
 
   if (!skill) return null;
 
@@ -345,36 +382,65 @@ export function SkillDetailSheet({
 
           <Separator />
 
-          <section className="space-y-2">
+          {/* File Browser */}
+          <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-muted-foreground">
-                SKILL.md 原文
-              </h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">文件结构</h3>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={handleLoadRawContent}
-                disabled={rawLoading || rawContent !== null}
+                onClick={() => openFileInEditor()}
+                title="在 Finder 中打开目录"
               >
-                {rawLoading ? "加载中..." : rawContent ? "已加载" : "查看原文"}
+                打开目录
               </Button>
             </div>
 
-            {rawError && (
-              <p className="text-xs text-red-500">{rawError}</p>
+            {fileTreeLoading && (
+              <p className="text-sm text-muted-foreground">加载中...</p>
             )}
 
-            {rawContentPath && (
-              <p className="break-all font-mono text-xs text-muted-foreground">
-                {rawContentPath}
-              </p>
+            {fileTree && fileTree.length > 0 && (
+              <div className="rounded-md border bg-muted/20 p-2">
+                <FileTreeView
+                  nodes={fileTree}
+                  selectedFile={selectedFile}
+                  onSelectFile={loadFileContent}
+                  onOpenFile={openFileInEditor}
+                />
+              </div>
             )}
 
-            {rawContent && (
-              <pre className="max-h-[360px] overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-5">
-                <code>{rawContent}</code>
-              </pre>
+            {fileTree && fileTree.length === 0 && (
+              <p className="text-sm text-muted-foreground/60 italic">目录为空</p>
+            )}
+
+            {/* File content viewer */}
+            {selectedFile && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-mono text-xs text-muted-foreground truncate">
+                    {selectedFile}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 shrink-0 text-xs"
+                    onClick={() => openFileInEditor(selectedFile)}
+                  >
+                    编辑
+                  </Button>
+                </div>
+                {fileContentLoading ? (
+                  <p className="text-sm text-muted-foreground">加载中...</p>
+                ) : fileContent ? (
+                  <pre className="max-h-[400px] overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-5">
+                    <code>{fileContent}</code>
+                  </pre>
+                ) : null}
+              </div>
             )}
           </section>
             </TabsContent>
@@ -390,6 +456,86 @@ export function SkillDetailSheet({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function FileTreeView({
+  nodes,
+  selectedFile,
+  onSelectFile,
+  onOpenFile,
+  depth = 0,
+}: {
+  nodes: FileNode[];
+  selectedFile: string | null;
+  onSelectFile: (path: string) => void;
+  onOpenFile: (path: string) => void;
+  depth?: number;
+}) {
+  return (
+    <div className="space-y-0.5">
+      {nodes.map((node) => {
+        if (node.type === "directory") {
+          return (
+            <div key={node.relativePath}>
+              <div
+                className="flex items-center gap-1.5 py-0.5 text-xs text-muted-foreground"
+                style={{ paddingLeft: `${depth * 16}px` }}
+              >
+                <span className="text-[10px]">📂</span>
+                <span className="font-medium">{node.name}/</span>
+              </div>
+              {node.children && (
+                <FileTreeView
+                  nodes={node.children}
+                  selectedFile={selectedFile}
+                  onSelectFile={onSelectFile}
+                  onOpenFile={onOpenFile}
+                  depth={depth + 1}
+                />
+              )}
+            </div>
+          );
+        }
+
+        const isSelected = selectedFile === node.relativePath;
+        const sizeStr = node.size != null
+          ? node.size < 1024
+            ? `${node.size}B`
+            : `${(node.size / 1024).toFixed(1)}K`
+          : "";
+
+        return (
+          <div
+            key={node.relativePath}
+            className={`group flex items-center gap-1.5 rounded-sm py-0.5 pr-1 text-xs cursor-pointer hover:bg-accent ${
+              isSelected ? "bg-accent" : ""
+            }`}
+            style={{ paddingLeft: `${depth * 16}px` }}
+            onClick={() => onSelectFile(node.relativePath)}
+          >
+            <span className="text-[10px]">📄</span>
+            <span className={`flex-1 truncate ${isSelected ? "font-medium" : ""}`}>
+              {node.name}
+            </span>
+            <span className="shrink-0 text-[10px] text-muted-foreground/60 tabular-nums">
+              {sizeStr}
+            </span>
+            <button
+              type="button"
+              className="shrink-0 rounded px-1 py-0.5 text-[10px] text-blue-600 opacity-0 hover:bg-blue-50 group-hover:opacity-100 dark:text-blue-400 dark:hover:bg-blue-950"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenFile(node.relativePath);
+              }}
+              title="在编辑器中打开"
+            >
+              打开
+            </button>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
