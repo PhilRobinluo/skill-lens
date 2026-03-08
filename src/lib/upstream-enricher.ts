@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { getSkillGitHistory } from "./git-history";
 import os from "node:os";
+import path from "node:path";
 
 // ---------------------------------------------------------------------------
 // KNOWN_UPSTREAM_SOURCES — curated map of known forks (name → repo)
@@ -110,7 +111,8 @@ export async function enrichUpstreamAndHistory(
     // Only run git log for skills under ~/.claude (not temp dirs, etc.)
     if (skill.path.startsWith(claudePrefix)) {
       try {
-        const history = await getSkillGitHistory(skill.path);
+        const relativePath = path.relative(claudePrefix, skill.path);
+        const history = await getSkillGitHistory(claudePrefix, relativePath);
         if (history) {
           skill.gitHistory = history;
 
