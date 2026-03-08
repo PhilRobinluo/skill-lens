@@ -24,6 +24,7 @@ import { useAutoRefresh } from "@/hooks/use-sse";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { ErrorMessage } from "@/components/error-message";
 import { HealthReportCard } from "@/components/health-report-card";
+import { Separator } from "@/components/ui/separator";
 import { useSettings } from "@/hooks/use-settings";
 import type { DashboardStats } from "@/lib/types";
 import { skillDisplayName } from "@/lib/utils";
@@ -242,6 +243,66 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Row 2.3: Fork Health + Evolution */}
+      {stats.forkStats && stats.evolutionStats && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Fork 健康度</CardTitle>
+              <CardDescription>上游追踪与对账状态</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">{stats.forkStats.totalWithUpstream}</p>
+                  <p className="text-xs text-muted-foreground">有上游</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums text-amber-500">{stats.forkStats.modified}</p>
+                  <p className="text-xs text-muted-foreground">已修改</p>
+                </div>
+                <div>
+                  <p className={`text-2xl font-bold tabular-nums ${stats.forkStats.needsReconciliation > 0 ? "text-red-500" : ""}`}>
+                    {stats.forkStats.needsReconciliation}
+                  </p>
+                  <p className="text-xs text-muted-foreground">需对账</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">技能演化</CardTitle>
+              <CardDescription>本月活跃度概览</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">本月活跃</span>
+                <span className="font-bold tabular-nums">{stats.evolutionStats.activeThisMonth} 个</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">本月新建</span>
+                <span className="font-bold tabular-nums">{stats.evolutionStats.newThisMonth} 个</span>
+              </div>
+              {stats.evolutionStats.mostActive.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">最活跃 Top 5</p>
+                    {stats.evolutionStats.mostActive.map((s) => (
+                      <div key={s.name} className="flex items-center justify-between text-sm">
+                        <span className="max-w-[180px] truncate font-mono text-xs">{skillDisplayName(s.name)}</span>
+                        <span className="tabular-nums text-xs text-muted-foreground">{s.commits} commits</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Row 2.5: AI Health Report */}
       <HealthReportCard hasApiKey={settingsStatus?.hasApiKey ?? false} />
