@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type { SkillEntry, SkillSource, SkillsRegistry } from "./types";
 import { parseClaudeMd } from "./claude-md-parser";
+import { enrichUpstreamAndHistory } from "./upstream-enricher";
 import {
   SKILL_DIRS,
   PLUGINS_CACHE_DIR,
@@ -328,6 +329,7 @@ export async function scanAll(
         skills[key].tags = existingEntry.tags;
         skills[key].dependencies = existingEntry.dependencies;
         skills[key].notes = existingEntry.notes;
+        skills[key].upstream = existingEntry.upstream;
       }
     }
   }
@@ -351,6 +353,9 @@ export async function scanAll(
       version: (existingRegistry?.meta.version ?? 0) + 1,
     },
   };
+
+  // Enrich with upstream info and git history
+  await enrichUpstreamAndHistory(registry, existingRegistry);
 
   return registry;
 }
