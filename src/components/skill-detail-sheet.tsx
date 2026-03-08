@@ -56,6 +56,7 @@ export function SkillDetailSheet({
   const [activeTab, setActiveTab] = useState("overview");
   const [gitHistory, setGitHistory] = useState<SkillGitHistory | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Sync from prop
   useEffect(() => {
@@ -70,6 +71,7 @@ export function SkillDetailSheet({
       setActiveTab("overview");
       setGitHistory(null);
       setHistoryLoading(false);
+      setHistoryError(null);
     }
   }, [skill]);
 
@@ -122,14 +124,21 @@ export function SkillDetailSheet({
   async function loadGitHistory() {
     if (!skill || historyLoading || gitHistory) return;
     setHistoryLoading(true);
+    setHistoryError(null);
     try {
       const res = await fetch(`/api/skills/${encodeURIComponent(skill.name)}/history`);
-      if (res.ok) {
-        setGitHistory(await res.json());
-      }
-    } catch { /* ignore */ } finally {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setGitHistory(await res.json());
+    } catch (err) {
+      setHistoryError(String(err));
+    } finally {
       setHistoryLoading(false);
     }
+  }
+
+  function handleTabChange(v: string) {
+    setActiveTab(v);
+    if (v === "timeline" && !gitHistory && !historyError) loadGitHistory();
   }
 
   async function handleLoadRawContent() {
@@ -190,10 +199,7 @@ export function SkillDetailSheet({
         </SheetHeader>
 
         <div className="px-4 pb-8">
-          <Tabs value={activeTab} onValueChange={(v) => {
-            setActiveTab(v);
-            if (v === "timeline" && !gitHistory) loadGitHistory();
-          }}>
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="w-full">
               <TabsTrigger value="overview" className="flex-1">概览</TabsTrigger>
               <TabsTrigger value="timeline" className="flex-1">时间线</TabsTrigger>
@@ -374,7 +380,7 @@ export function SkillDetailSheet({
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-4">
-              <TimelineTab history={gitHistory} loading={historyLoading} />
+              <TimelineTab history={gitHistory} loading={historyLoading} error={historyError} />
             </TabsContent>
 
             <TabsContent value="upstream" className="pt-4">
@@ -387,8 +393,9 @@ export function SkillDetailSheet({
   );
 }
 
-function TimelineTab({ history, loading }: { history: SkillGitHistory | null; loading: boolean }) {
+function TimelineTab({ history, loading, error }: { history: SkillGitHistory | null; loading: boolean; error: string | null }) {
   if (loading) return <p className="text-sm text-muted-foreground">加载中...</p>;
+  if (error) return <p className="text-xs text-red-500">{error}</p>;
   if (!history || history.totalCommits === 0) {
     return <p className="text-sm text-muted-foreground/60 italic">无 Git 历史记录</p>;
   }
@@ -411,7 +418,7 @@ function TimelineTab({ history, loading }: { history: SkillGitHistory | null; lo
             <div className="space-y-0.5">
               <p className="text-sm font-medium">{commit.message}</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <code className="font-mono">{commit.sha}</code>
+                <code className="font-mono">{commit.sha.slice(0, 7)}</code>
                 <span>{commit.author}</span>
                 <span>{new Date(commit.date).toLocaleDateString("zh-CN")}</span>
                 {(commit.additions > 0 || commit.deletions > 0) && (
@@ -430,6 +437,12 @@ function TimelineTab({ history, loading }: { history: SkillGitHistory | null; lo
   );
 }
 
+const MOD_LABELS: Record<ModificationType, { label: string; className: string }> = {
+  bugfix: { label: "临时补丁", className: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
+  capability: { label: "核心能力", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  config: { label: "环境适配", className: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300" },
+};
+
 function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () => void }) {
   const upstream = skill.upstream;
 
@@ -444,11 +457,9 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
     );
   }
 
-  const MOD_LABELS: Record<ModificationType, { label: string; className: string }> = {
-    bugfix: { label: "临时补丁", className: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300" },
-    capability: { label: "核心能力", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
-    config: { label: "环境适配", className: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300" },
-  };
+  const safeUrl = upstream.originUrl && (upstream.originUrl.startsWith("https://") || upstream.originUrl.startsWith("http://"))
+    ? upstream.originUrl
+    : null;
 
   async function markReconciled() {
     await fetch(`/api/skills/${encodeURIComponent(skill.name)}/upstream`, {
@@ -466,12 +477,12 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
         <div className="grid grid-cols-2 gap-y-1.5 text-sm">
           <span className="text-muted-foreground">来源</span>
           <span className="font-mono text-xs">{upstream.origin}</span>
-          {upstream.originUrl && (
+          {safeUrl && (
             <>
               <span className="text-muted-foreground">URL</span>
-              <a href={upstream.originUrl} target="_blank" rel="noopener noreferrer"
+              <a href={safeUrl} target="_blank" rel="noopener noreferrer"
                 className="text-xs text-blue-600 hover:underline dark:text-blue-400">
-                {upstream.originUrl}
+                {safeUrl}
               </a>
             </>
           )}
@@ -498,7 +509,7 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
           <h3 className="text-sm font-semibold text-muted-foreground">本地修改</h3>
           <div className="space-y-2">
             {upstream.modifications.map((mod, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm">
+              <div key={`${mod.file}-${mod.type}-${i}`} className="flex items-start gap-2 text-sm">
                 <Badge variant="outline" className={`shrink-0 text-[10px] ${MOD_LABELS[mod.type].className}`}>
                   {MOD_LABELS[mod.type].label}
                 </Badge>
