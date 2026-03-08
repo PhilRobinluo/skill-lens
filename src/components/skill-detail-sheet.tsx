@@ -758,6 +758,109 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
           </div>
         </section>
       )}
+
+      {/* Blame view for modified skills */}
+      {upstream.localModified && (
+        <BlameSection skillName={skill.name} />
+      )}
     </div>
+  );
+}
+
+function BlameSection({ skillName }: { skillName: string }) {
+  const [blameLines, setBlameLines] = useState<Array<{
+    lineNumber: number;
+    sha: string;
+    author: string;
+    date: string;
+    content: string;
+  }> | null>(null);
+  const [blameLoading, setBlameLoading] = useState(false);
+  const [blameError, setBlameError] = useState<string | null>(null);
+  const [showBlame, setShowBlame] = useState(false);
+  const [hoveredSha, setHoveredSha] = useState<string | null>(null);
+
+  async function loadBlame() {
+    if (blameLoading || blameLines) return;
+    setBlameLoading(true);
+    setBlameError(null);
+    try {
+      const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}/blame`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setBlameLines(data.lines);
+    } catch (err) {
+      setBlameError(String(err));
+    } finally {
+      setBlameLoading(false);
+    }
+  }
+
+  // Color palette for different commits
+  const shaColors = useMemo(() => {
+    if (!blameLines) return {};
+    const uniqueShas = [...new Set(blameLines.map(l => l.sha))];
+    const palette = [
+      "bg-blue-50 dark:bg-blue-950/30",
+      "bg-green-50 dark:bg-green-950/30",
+      "bg-amber-50 dark:bg-amber-950/30",
+      "bg-purple-50 dark:bg-purple-950/30",
+      "bg-pink-50 dark:bg-pink-950/30",
+      "bg-cyan-50 dark:bg-cyan-950/30",
+    ];
+    const map: Record<string, string> = {};
+    uniqueShas.forEach((sha, i) => {
+      map[sha] = palette[i % palette.length];
+    });
+    return map;
+  }, [blameLines]);
+
+  return (
+    <section className="space-y-2">
+      <Separator />
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-muted-foreground">行级归因</h3>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 text-xs"
+          onClick={() => {
+            setShowBlame(!showBlame);
+            if (!blameLines) loadBlame();
+          }}
+        >
+          {showBlame ? "收起" : "查看 Blame"}
+        </Button>
+      </div>
+
+      {blameLoading && <p className="text-xs text-muted-foreground">加载 blame 数据...</p>}
+      {blameError && <p className="text-xs text-red-500">{blameError}</p>}
+
+      {showBlame && blameLines && (
+        <div className="max-h-[300px] overflow-auto rounded-md border font-mono text-[11px]">
+          {blameLines.map((line) => (
+            <div
+              key={line.lineNumber}
+              className={`flex border-b border-muted/20 ${
+                hoveredSha === line.sha ? "ring-1 ring-primary/30" : ""
+              } ${shaColors[line.sha] ?? ""}`}
+              onMouseEnter={() => setHoveredSha(line.sha)}
+              onMouseLeave={() => setHoveredSha(null)}
+              title={`${line.sha} · ${line.author} · ${new Date(line.date).toLocaleDateString("zh-CN")}`}
+            >
+              <span className="w-8 shrink-0 select-none px-1 py-px text-right text-muted-foreground/40">
+                {line.lineNumber}
+              </span>
+              <span className="w-14 shrink-0 truncate px-1 py-px text-muted-foreground/50">
+                {line.sha}
+              </span>
+              <span className="flex-1 whitespace-pre-wrap break-all px-1 py-px">
+                {line.content || "\u00A0"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
