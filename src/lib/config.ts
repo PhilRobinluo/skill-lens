@@ -27,13 +27,10 @@ export const PROJECTS_DIR: string =
   process.env.PROJECTS_DIR ??
   path.join(home, ".claude", "projects");
 
-/** Parent directories to scan for projects with .claude/skills/ or CLAUDE.md */
+/** Extra parent directories to scan for projects (comma-separated, optional) */
 export const PROJECT_SCAN_ROOTS: string[] = process.env.PROJECT_SCAN_ROOTS
   ? process.env.PROJECT_SCAN_ROOTS.split(",").map((d) => d.trim())
-  : [
-      path.join(home, "基于github同步笔记"),
-      path.join(home, "opensource"),
-    ];
+  : [];
 
 /** Whether to run in demo mode (skip real scanning, use sample data) */
 export const DEMO_MODE: boolean = process.env.DEMO === "1";
