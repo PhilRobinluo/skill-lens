@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import { Nav } from "@/components/nav";
 import { ScopeProvider } from "@/contexts/scope-context";
 import "./globals.css";
@@ -25,14 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ScopeProvider>
-          <Nav />
-          <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
-        </ScopeProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ScopeProvider>
+            <Nav />
+            <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
+          </ScopeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
