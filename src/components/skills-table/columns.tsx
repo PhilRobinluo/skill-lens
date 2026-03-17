@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { TableColumnHeader } from "./table-column-header";
 import { CellDomain } from "./cells/cell-domain";
 import { cleanDescriptionSummary, skillDisplayName } from "@/lib/utils";
@@ -30,6 +31,7 @@ const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> 
 export interface ColumnCallbacks {
   onNameClick: (skill: SkillEntry) => void;
   onDomainChange: (skill: SkillEntry, domains: string[]) => void;
+  onToggle: (skill: SkillEntry, enabled: boolean) => void;
   allDomains?: string[];
 }
 
@@ -69,12 +71,32 @@ export function getColumns(
       cell: ({ row }) => (
         <button
           type="button"
-          className="max-w-[200px] truncate text-left font-mono text-sm hover:underline"
+          className={`max-w-[200px] truncate text-left font-mono text-sm hover:underline ${
+            !row.original.enabled ? "line-through opacity-50" : ""
+          }`}
           onClick={() => callbacks.onNameClick(row.original)}
         >
           {skillDisplayName(row.original.name)}
         </button>
       ),
+      enableGrouping: false,
+    },
+    // 1.5 Enabled toggle
+    {
+      id: "enabled",
+      accessorFn: (row) => row.enabled,
+      header: ({ column }) => <TableColumnHeader column={column} title="启用" />,
+      cell: ({ row }) => {
+        const skill = row.original;
+        return (
+          <Switch
+            size="sm"
+            checked={skill.enabled}
+            onCheckedChange={(checked) => callbacks.onToggle(skill, !!checked)}
+          />
+        );
+      },
+      enableSorting: false,
       enableGrouping: false,
     },
     // 2. Source
