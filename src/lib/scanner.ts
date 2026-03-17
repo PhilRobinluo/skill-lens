@@ -11,6 +11,8 @@ import {
   CLAUDE_MD_PATH,
 } from "./config";
 import { discoverProjects } from "./project-discovery";
+import { readSettings } from "./settings";
+import { scanRemoteOpenClawSkills } from "./openclaw-remote";
 
 // ---------------------------------------------------------------------------
 // parseSkillMd — extract description from SKILL.md content
@@ -123,10 +125,15 @@ async function scanUserSkills(
 
     const skillDir = path.join(skillsDir, entry.name);
     const skillMdPath = path.join(skillDir, "SKILL.md");
+    const skillMdDisabledPath = path.join(skillDir, "SKILL.md.disabled");
 
-    if (!fs.existsSync(skillMdPath)) continue;
+    const hasEnabled = fs.existsSync(skillMdPath);
+    const hasDisabled = fs.existsSync(skillMdDisabledPath);
 
-    const skillEntry = await buildSkillEntry(entry.name, skillDir, skillMdPath);
+    if (!hasEnabled && !hasDisabled) continue;
+
+    const actualPath = hasEnabled ? skillMdPath : skillMdDisabledPath;
+    const skillEntry = await buildSkillEntry(entry.name, skillDir, actualPath, "global", hasEnabled);
     skills[skillEntry.name] = skillEntry;
   }
 }
@@ -143,7 +150,8 @@ async function scanPluginsCache(
     const skillDir = path.dirname(skillMdPath);
     const name = path.basename(skillDir);
 
-    const skillEntry = await buildSkillEntry(name, skillDir, skillMdPath);
+    const isEnabled = path.basename(skillMdPath) === "SKILL.md";
+    const skillEntry = await buildSkillEntry(name, skillDir, skillMdPath, "global", isEnabled);
     // Use a composite key for plugin skills to avoid name collisions
     const key = skillEntry.source === "self-built" ? name : `${skillEntry.source}/${name}`;
     skillEntry.name = key; // name must equal registry key for API lookups
@@ -167,7 +175,7 @@ async function findSkillMdFiles(dir: string): Promise<string[]> {
       const fullPath = path.join(current, entry.name);
       if (entry.isDirectory()) {
         await walk(fullPath);
-      } else if (entry.isFile() && entry.name === "SKILL.md") {
+      } else if (entry.isFile() && (entry.name === "SKILL.md" || entry.name === "SKILL.md.disabled")) {
         results.push(fullPath);
       }
     }
@@ -182,6 +190,7 @@ async function buildSkillEntry(
   skillDir: string,
   skillMdPath: string,
   belongsTo: string = "global",
+  enabled: boolean = true,
 ): Promise<SkillEntry> {
   const content = await fsp.readFile(skillMdPath, "utf-8");
   const stat = await fsp.stat(skillMdPath);
@@ -203,6 +212,7 @@ async function buildSkillEntry(
     dependencies: [],
     notes: "",
     belongsTo,
+    enabled,
   };
 }
 
@@ -232,12 +242,16 @@ export async function scanProjectSkills(): Promise<Record<string, SkillEntry>> {
 
       const skillDir = path.join(skillsDir, entry.name);
       const skillMdPath = path.join(skillDir, "SKILL.md");
+      const skillMdDisabledPath = path.join(skillDir, "SKILL.md.disabled");
 
-      if (!fs.existsSync(skillMdPath)) continue;
+      const hasEnabled = fs.existsSync(skillMdPath);
+      const hasDisabled = fs.existsSync(skillMdDisabledPath);
 
-      // Key: "project:<projectName>/<skillName>" to avoid collisions with global skills
+      if (!hasEnabled && !hasDisabled) continue;
+
+      const actualPath = hasEnabled ? skillMdPath : skillMdDisabledPath;
       const key = `project:${project.name}/${entry.name}`;
-      const skillEntry = await buildSkillEntry(entry.name, skillDir, skillMdPath, project.path);
+      const skillEntry = await buildSkillEntry(entry.name, skillDir, actualPath, project.path, hasEnabled);
       skillEntry.name = key;
       skills[key] = skillEntry;
     }
@@ -346,6 +360,17 @@ export async function scanAll(
   // Scan project-level skills
   const projectSkills = await scanProjectSkills();
   Object.assign(skills, projectSkills);
+
+  // Scan remote OpenClaw skills via SSH (if enabled)
+  try {
+    const settings = await readSettings();
+    if (settings.openClawSsh?.enabled && settings.openClawSsh.host) {
+      const remoteSkills = scanRemoteOpenClawSkills(settings.openClawSsh);
+      Object.assign(skills, remoteSkills);
+    }
+  } catch {
+    // Remote scanning failed — continue with local skills only
+  }
 
   // Parse global CLAUDE.md for routing-table references
   let claudeMdRefs: Record<string, Array<{ table: string; trigger: string }>> =
