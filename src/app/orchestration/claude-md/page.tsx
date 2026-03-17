@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
 import {
   ReactFlow,
@@ -432,13 +430,6 @@ export default function ClaudeMdPage() {
   // Sidebar
   const [showHistory, setShowHistory] = useState(true);
 
-  // Profile system
-  const [profiles, setProfiles] = useState<Array<{ name: string; active: boolean; size: number; lastModified: string }>>([]);
-  const [activeProfileName, setActiveProfileName] = useState<string | null>(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [showProfileManager, setShowProfileManager] = useState(false);
-  const [newProfileName, setNewProfileName] = useState("");
-
   // TOC & scroll
   const [activeTocLine, setActiveTocLine] = useState<number | null>(null);
   const lineRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -508,59 +499,6 @@ export default function ClaudeMdPage() {
     setExpandedDiffs({});
     fetchAll();
   }, [fetchAll]);
-
-  // --- Profile fetching ---
-  const fetchProfiles = useCallback(async () => {
-    try {
-      const res = await fetch("/api/claude-md/profiles");
-      if (res.ok) {
-        const data = await res.json();
-        setProfiles(data.profiles);
-        setActiveProfileName(data.activeProfile);
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
-
-  const switchProfile = async (name: string) => {
-    setProfileLoading(true);
-    try {
-      const res = await fetch(`/api/claude-md/profiles/${encodeURIComponent(name)}/activate`, {
-        method: "PUT",
-      });
-      if (res.ok) {
-        await fetchProfiles();
-        await fetchAll();
-      }
-    } finally {
-      setProfileLoading(false);
-    }
-  };
-
-  const saveAsProfile = async () => {
-    if (!newProfileName.trim()) return;
-    try {
-      const res = await fetch("/api/claude-md/profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newProfileName.trim() }),
-      });
-      if (res.ok) {
-        setNewProfileName("");
-        await fetchProfiles();
-      }
-    } catch { /* ignore */ }
-  };
-
-  const deleteProfileHandler = async (name: string) => {
-    try {
-      await fetch(`/api/claude-md/profiles/${encodeURIComponent(name)}`, {
-        method: "DELETE",
-      });
-      await fetchProfiles();
-    } catch { /* ignore */ }
-  };
 
   // --- Version loading ---
   async function loadVersion(sha: string) {
@@ -976,31 +914,6 @@ export default function ClaudeMdPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Profile selector — only show for global CLAUDE.md */}
-            {!activeFile && !selectedVersion && (
-              <>
-                <select
-                  className="h-8 rounded-md border bg-background px-2 text-sm"
-                  value={activeProfileName ?? ""}
-                  onChange={(e) => e.target.value && switchProfile(e.target.value)}
-                  disabled={profileLoading}
-                >
-                  <option value="" disabled>Profile</option>
-                  {profiles.map((p) => (
-                    <option key={p.name} value={p.name}>
-                      {p.name}{p.active ? " ✓" : ""}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowProfileManager(true)}
-                >
-                  管理
-                </Button>
-              </>
-            )}
             {selectedVersion && (
               <button
                 type="button"
@@ -1450,66 +1363,6 @@ export default function ClaudeMdPage() {
         )}
       </div>
 
-      {/* Profile Manager Dialog */}
-      <Dialog open={showProfileManager} onOpenChange={setShowProfileManager}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>管理 CLAUDE.md Profile</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Create new */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="新 Profile 名称"
-                value={newProfileName}
-                onChange={(e) => setNewProfileName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && saveAsProfile()}
-              />
-              <Button onClick={saveAsProfile} disabled={!newProfileName.trim()} className="shrink-0">
-                保存当前为
-              </Button>
-            </div>
-
-            {/* Profile list */}
-            <div className="space-y-2">
-              {profiles.map((p) => (
-                <div key={p.name} className="flex items-center justify-between rounded-md border px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{p.name}</span>
-                    {p.active && <Badge variant="default" className="text-[10px]">当前</Badge>}
-                    <span className="text-xs text-muted-foreground">
-                      {(p.size / 1024).toFixed(1)}KB
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {!p.active && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => { switchProfile(p.name); setShowProfileManager(false); }}
-                      >
-                        切换
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-500 hover:text-red-700"
-                      disabled={p.active}
-                      onClick={() => deleteProfileHandler(p.name)}
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {profiles.length === 0 && (
-                <p className="text-sm text-muted-foreground">暂无 Profile。点击「保存当前为」创建第一个。</p>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
