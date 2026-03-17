@@ -18,6 +18,8 @@ function makeSkill(overrides: Partial<SkillEntry>): SkillEntry {
     tags: { domain: [], autoTagged: false, frequency: null },
     dependencies: [],
     notes: "",
+    belongsTo: "global",
+    enabled: true,
     ...overrides,
   };
 }
