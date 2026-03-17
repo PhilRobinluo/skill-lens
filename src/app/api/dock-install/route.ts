@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 const APP_NAME = "技能透镜";
 const BUNDLE_ID = "com.arthur.skill-lens";
-const HOME = process.env.HOME || "/Users/qihang";
+const HOME = process.env.HOME || "";
 const APP_DIR = path.join(HOME, "Applications");
 const APP_PATH = path.join(APP_DIR, `${APP_NAME}.app`);
 
