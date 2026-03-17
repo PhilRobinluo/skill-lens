@@ -24,6 +24,7 @@ import type { FilterState, SkillEntry } from "@/lib/types";
 
 const COLUMN_LABELS: Record<string, string> = {
   name: "名称",
+  enabled: "启用",
   source: "来源",
   status: "路由",
   domain: "领域",

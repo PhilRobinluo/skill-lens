@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import { Moon, Sun } from "lucide-react";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { ScopeSelector } from "@/components/scope-selector";
 
@@ -10,11 +13,13 @@ const links = [
   { href: "/tags", label: "管理" },
   { href: "/skills", label: "浏览" },
   { href: "/orchestration", label: "编排" },
+  { href: "/openclaw", label: "🦞 OpenClaw" },
 ];
 
 export function Nav() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,8 +29,9 @@ export function Nav() {
           <div className="flex items-center gap-0.5">
             <Link
               href="/"
-              className="text-lg font-bold tracking-tight hover:text-primary transition-colors"
+              className="flex items-center gap-1.5 text-lg font-bold tracking-tight hover:text-primary transition-colors"
             >
+              <Image src="/logo-v6-dock.png" alt="Skill Lens" width={28} height={28} className="rounded-md" />
               技能透镜
             </Link>
             <ScopeSelector />
@@ -61,6 +67,17 @@ export function Nav() {
             </span>
             <span className="hidden xs:inline">watching</span>
           </div>
+
+          {/* Theme toggle */}
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            aria-label="切换主题"
+          >
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+          </button>
 
           {/* Settings */}
           <SettingsDialog />

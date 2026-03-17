@@ -27,11 +27,14 @@ function makeSkill(name: string): SkillEntry {
     source: "self-built",
     description: `Test skill: ${name}`,
     lineCount: 10,
+    createdAt: new Date().toISOString(),
     lastModified: new Date().toISOString(),
     claudeMdRefs: [],
     tags: { domain: [], autoTagged: false, frequency: null },
     dependencies: [],
     notes: "",
+    belongsTo: "global",
+    enabled: true,
   };
 }
 

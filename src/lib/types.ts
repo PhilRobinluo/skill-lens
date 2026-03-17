@@ -2,7 +2,8 @@ export type SkillSource =
   | "self-built"
   | "baoyu"
   | "plugin-official"
-  | "plugin-community";
+  | "plugin-community"
+  | "openclaw-remote";
 
 export type Frequency = "daily" | "weekly" | "occasional" | "rare";
 
@@ -33,6 +34,8 @@ export interface SkillEntry {
   gitHistory?: SkillGitHistory;
   /** Scope ownership: "global" for ~/.claude/skills, project path for project-level skills */
   belongsTo: string;
+  /** Whether this skill is currently enabled (SKILL.md exists vs SKILL.md.disabled) */
+  enabled: boolean;
 }
 
 export interface RegistryMeta {
@@ -85,14 +88,38 @@ export interface FilterState {
 
 // ---------- Settings ----------
 
+export interface OpenClawSshConfig {
+  host: string;
+  port: number;
+  user: string;
+  keyPath: string;
+  skillsPath: string;
+  /** Optional: if OpenClaw runs as a different user, commands run via sudo -u */
+  runAsUser: string;
+  enabled: boolean;
+}
+
+/** A single OpenClaw instance (one "lobster") */
+export interface OpenClawInstance {
+  id: string;
+  nickname: string;
+  ssh: OpenClawSshConfig;
+}
+
 export interface AppSettings {
   openRouterApiKey: string;
   aiModel: string;
+  /** @deprecated Use openClawInstances instead. Kept for migration. */
+  openClawSsh?: OpenClawSshConfig;
+  /** Multiple OpenClaw instances */
+  openClawInstances?: OpenClawInstance[];
 }
 
 export interface SettingsStatus {
   hasApiKey: boolean;
   aiModel: string;
+  openClawSsh?: OpenClawSshConfig;
+  openClawInstances?: OpenClawInstance[];
 }
 
 // ---------- AI: Health Report ----------
@@ -142,6 +169,7 @@ export interface DashboardStats {
   totalSkills: number;
   routedSkills: number;
   orphanSkills: number;
+  disabledSkills: number;
   domainDistribution: Record<string, number>;
   sourceDistribution: Record<string, number>;
   recentChanges: Array<{ name: string; lastModified: string }>;
@@ -219,7 +247,7 @@ export interface EvolutionStats {
 
 // ---------- Project Scope ----------
 
-export type ScopeType = "global" | "all" | `project:${string}` | `combined:${string}`;
+export type ScopeType = "global" | "all" | "openclaw-remote" | `project:${string}` | `combined:${string}`;
 
 export interface ProjectInfo {
   /** Display name (directory basename) */

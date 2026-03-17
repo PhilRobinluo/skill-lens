@@ -822,6 +822,14 @@ function DraftPageInner() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onUpdated={fetchSources}
+        onToggle={async (skill, enabled) => {
+          await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled }),
+          });
+          fetchSources();
+        }}
       />
 
       {/* AI Flow Dialog */}

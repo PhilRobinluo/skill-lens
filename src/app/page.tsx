@@ -149,7 +149,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 1: Stat Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="技能总数"
           value={stats.totalSkills}
@@ -180,6 +180,12 @@ export default function DashboardPage() {
           value={stats.orphanSkills}
           description="未被任何路由表引用"
           warning={stats.orphanSkills > stats.totalSkills * 0.5}
+        />
+        <StatCard
+          title="已禁用"
+          value={stats.disabledSkills}
+          description="SKILL.md 已重命名为 .disabled"
+          muted={stats.disabledSkills > 0}
         />
         <StatCard
           title="领域分类"
@@ -441,12 +447,14 @@ function StatCard({
   description,
   icon,
   warning,
+  muted,
 }: {
   title: string;
   value: number;
   description: string;
   icon?: React.ReactNode;
   warning?: boolean;
+  muted?: boolean;
 }) {
   return (
     <Card>
@@ -459,7 +467,7 @@ function StatCard({
       <CardContent>
         <div
           className={`text-3xl font-bold tabular-nums ${
-            warning ? "text-amber-500" : ""
+            warning ? "text-amber-500" : muted ? "text-muted-foreground" : ""
           }`}
         >
           {value}

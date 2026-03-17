@@ -389,6 +389,14 @@ function SkillsPageInner() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         onUpdated={handleSheetUpdated}
+        onToggle={async (skill, enabled) => {
+          await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled }),
+          });
+          handleSheetUpdated();
+        }}
       />
     </div>
   );

@@ -114,6 +114,19 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
     [skills, filterState],
   );
 
+  // Toggle enabled/disabled
+  const toggleSkill = useCallback(
+    async (skill: SkillEntry, enabled: boolean) => {
+      await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      onUpdated();
+    },
+    [onUpdated],
+  );
+
   // Column callbacks
   const callbacks: ColumnCallbacks = useMemo(
     () => ({
@@ -121,9 +134,10 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
       onDomainChange: (skill, domains) => {
         patchDomain(skill.name, domains);
       },
+      onToggle: toggleSkill,
       allDomains,
     }),
-    [onNameClick, patchDomain, allDomains],
+    [onNameClick, patchDomain, toggleSkill, allDomains],
   );
 
   const columns = useMemo(() => getColumns(callbacks, callStatsMap), [callbacks, callStatsMap]);
