@@ -25,6 +25,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       (s) => s.claudeMdRefs.length > 0,
     ).length;
 
+    const disabledSkills = skills.filter((s) => !s.enabled).length;
+
     // Domain distribution
     const domainDistribution: Record<string, number> = {};
     for (const skill of skills) {
@@ -86,6 +88,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       totalSkills: skills.length,
       routedSkills,
       orphanSkills: skills.length - routedSkills,
+      disabledSkills,
       domainDistribution,
       sourceDistribution,
       recentChanges,

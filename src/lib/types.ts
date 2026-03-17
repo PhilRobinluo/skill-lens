@@ -169,6 +169,7 @@ export interface DashboardStats {
   totalSkills: number;
   routedSkills: number;
   orphanSkills: number;
+  disabledSkills: number;
   domainDistribution: Record<string, number>;
   sourceDistribution: Record<string, number>;
   recentChanges: Array<{ name: string; lastModified: string }>;
