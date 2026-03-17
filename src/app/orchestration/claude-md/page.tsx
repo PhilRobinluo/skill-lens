@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
 import {
   ReactFlow,
@@ -50,6 +53,37 @@ interface ParsedRoute {
   entries: Array<{ intent: string; skill: string; triggers: string }>;
 }
 
+interface AiFlowNode {
+  skillName: string;
+  label: string;
+  x: number;
+  y: number;
+  group: string;
+}
+
+interface AiFlowEdge {
+  source: string;
+  target: string;
+  label: string;
+}
+
+interface AiFlowData {
+  nodes: AiFlowNode[];
+  edges: AiFlowEdge[];
+  workflows: Array<{ name: string; skills: string[] }>;
+  summary: string;
+}
+
+interface FlowSnapshotMeta {
+  id: string;
+  gitSha: string;
+  gitMessage: string;
+  timestamp: string;
+  summary: string;
+  nodeCount: number;
+  edgeCount: number;
+}
+
 // ---------------------------------------------------------------------------
 // React Flow Custom Nodes (must be outside component)
 // ---------------------------------------------------------------------------
@@ -87,11 +121,34 @@ function SkillFlowNode({ data }: { data: { label: string; intent: string } }) {
   );
 }
 
+function AiSkillFlowNode({ data }: { data: { label: string; group: string } }) {
+  return (
+    <div className="max-w-[200px] rounded-lg border-2 border-purple-300 bg-purple-50 px-3 py-2 shadow-sm dark:border-purple-700 dark:bg-purple-950/50">
+      <Handle type="target" position={Position.Left} className="!h-2 !w-2 !bg-purple-500 !border-purple-200" />
+      <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-purple-500 !border-purple-200" />
+      <code className="block truncate text-[11px] font-semibold text-purple-900 dark:text-purple-200">{data.label}</code>
+      <div className="mt-0.5 truncate text-[9px] text-purple-600/70 dark:text-purple-400/70">{data.group}</div>
+    </div>
+  );
+}
+
+function AiGroupLabelNode({ data }: { data: { label: string; count: number } }) {
+  return (
+    <div className="rounded-xl bg-purple-600 px-5 py-2 text-center shadow-lg dark:bg-purple-800">
+      <Handle type="source" position={Position.Right} className="!h-3 !w-3 !bg-purple-400 !border-purple-200" />
+      <div className="text-xs font-bold text-white">{data.label}</div>
+      <div className="text-[10px] text-purple-200">{data.count} 个 Skill</div>
+    </div>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const flowNodeTypes: NodeTypes = {
   rootNode: RootFlowNode,
   categoryNode: CategoryFlowNode,
   skillNode: SkillFlowNode,
+  aiSkillNode: AiSkillFlowNode,
+  aiGroupNode: AiGroupLabelNode,
 } as any;
 
 // ---------------------------------------------------------------------------
@@ -252,6 +309,71 @@ function buildFlowElements(routeTables: ParsedRoute[]): { nodes: Node[]; edges: 
   return { nodes, edges };
 }
 
+function buildAiFlowElements(data: AiFlowData): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  // Group nodes by workflow
+  const groups = new Map<string, AiFlowNode[]>();
+  for (const n of data.nodes) {
+    const g = n.group || "未分组";
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g)!.push(n);
+  }
+
+  // Add group label nodes on the left
+  let groupIdx = 0;
+  for (const [groupName, groupNodes] of groups) {
+    const minY = Math.min(...groupNodes.map((n) => n.y));
+    const maxY = Math.max(...groupNodes.map((n) => n.y));
+    const centerY = (minY + maxY) / 2;
+
+    const groupId = `group-${groupIdx}`;
+    nodes.push({
+      id: groupId,
+      type: "aiGroupNode",
+      data: { label: groupName, count: groupNodes.length },
+      position: { x: groupNodes[0].x - 280, y: centerY },
+    });
+
+    // Connect group → first skill in that group
+    edges.push({
+      id: `e-${groupId}-${groupNodes[0].skillName}`,
+      source: groupId,
+      target: groupNodes[0].skillName,
+      type: "smoothstep",
+      style: { stroke: "#a855f7", strokeWidth: 2 },
+    });
+
+    groupIdx++;
+  }
+
+  // Add skill nodes
+  for (const n of data.nodes) {
+    nodes.push({
+      id: n.skillName,
+      type: "aiSkillNode",
+      data: { label: n.label, group: n.group },
+      position: { x: n.x, y: n.y },
+    });
+  }
+
+  // Add edges
+  for (const e of data.edges) {
+    edges.push({
+      id: `e-${e.source}-${e.target}`,
+      source: e.source,
+      target: e.target,
+      type: "smoothstep",
+      label: e.label,
+      style: { stroke: "#8b5cf6", strokeWidth: 1.5 },
+      labelStyle: { fontSize: 10, fill: "#7c3aed" },
+    });
+  }
+
+  return { nodes, edges };
+}
+
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -286,6 +408,17 @@ export default function ClaudeMdPage() {
   const [activeTab, setActiveTab] = useState<MainTab>("doc");
   const [docViewMode, setDocViewMode] = useState<"rendered" | "source">("rendered");
 
+  // AI analysis
+  const [routeAiReport, setRouteAiReport] = useState<string | null>(null);
+  const [routeAiLoading, setRouteAiLoading] = useState(false);
+  const [aiFlowData, setAiFlowData] = useState<AiFlowData | null>(null);
+  const [aiFlowError, setAiFlowError] = useState<string | null>(null);
+  const [flowAiLoading, setFlowAiLoading] = useState(false);
+  type FlowSource = "parsed" | "ai" | "snapshot";
+  const [flowSource, setFlowSource] = useState<FlowSource>("parsed");
+  const [snapshots, setSnapshots] = useState<FlowSnapshotMeta[]>([]);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+
   // Version notes
   const [versionNotes, setVersionNotes] = useState<Record<string, string>>({});
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -298,6 +431,13 @@ export default function ClaudeMdPage() {
 
   // Sidebar
   const [showHistory, setShowHistory] = useState(true);
+
+  // Profile system
+  const [profiles, setProfiles] = useState<Array<{ name: string; active: boolean; size: number; lastModified: string }>>([]);
+  const [activeProfileName, setActiveProfileName] = useState<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [showProfileManager, setShowProfileManager] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
 
   // TOC & scroll
   const [activeTocLine, setActiveTocLine] = useState<number | null>(null);
@@ -317,9 +457,12 @@ export default function ClaudeMdPage() {
     if (scope === "global") {
       setActiveFile(null);
     } else if (scope.startsWith("project:") || scope.startsWith("combined:")) {
+      // Project scope: default to project-level CLAUDE.md (not global)
       setActiveFile(scopeProjectPath);
+    } else if (scope === "all") {
+      // All scope: default to global CLAUDE.md
+      setActiveFile(null);
     }
-    // "all" scope → keep current activeFile (user can switch freely)
   }, [scope, scopeProjectPath]);
 
   // Build the project param for API calls
@@ -365,6 +508,59 @@ export default function ClaudeMdPage() {
     setExpandedDiffs({});
     fetchAll();
   }, [fetchAll]);
+
+  // --- Profile fetching ---
+  const fetchProfiles = useCallback(async () => {
+    try {
+      const res = await fetch("/api/claude-md/profiles");
+      if (res.ok) {
+        const data = await res.json();
+        setProfiles(data.profiles);
+        setActiveProfileName(data.activeProfile);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
+
+  const switchProfile = async (name: string) => {
+    setProfileLoading(true);
+    try {
+      const res = await fetch(`/api/claude-md/profiles/${encodeURIComponent(name)}/activate`, {
+        method: "PUT",
+      });
+      if (res.ok) {
+        await fetchProfiles();
+        await fetchAll();
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const saveAsProfile = async () => {
+    if (!newProfileName.trim()) return;
+    try {
+      const res = await fetch("/api/claude-md/profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newProfileName.trim() }),
+      });
+      if (res.ok) {
+        setNewProfileName("");
+        await fetchProfiles();
+      }
+    } catch { /* ignore */ }
+  };
+
+  const deleteProfileHandler = async (name: string) => {
+    try {
+      await fetch(`/api/claude-md/profiles/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
+      await fetchProfiles();
+    } catch { /* ignore */ }
+  };
 
   // --- Version loading ---
   async function loadVersion(sha: string) {
@@ -421,10 +617,27 @@ export default function ClaudeMdPage() {
   const activeContent = selectedVersion ? selectedVersionContent : currentContent;
   const toc = useMemo(() => buildTocFromContent(activeContent), [activeContent]);
   const routeTables = useMemo(() => parseRouteTables(activeContent), [activeContent]);
-  const { nodes: flowNodes, edges: flowEdges } = useMemo(
+  const { nodes: parsedFlowNodes, edges: parsedFlowEdges } = useMemo(
     () => buildFlowElements(routeTables),
     [routeTables],
   );
+  const { nodes: aiFlowNodes, edges: aiFlowEdges } = useMemo(
+    () => (aiFlowData ? buildAiFlowElements(aiFlowData) : { nodes: [], edges: [] }),
+    [aiFlowData],
+  );
+
+  // Active flow nodes/edges based on source
+  const flowNodes = flowSource === "parsed" ? parsedFlowNodes : aiFlowNodes;
+  const flowEdges = flowSource === "parsed" ? parsedFlowEdges : aiFlowEdges;
+
+  // Load snapshots list
+  const fetchSnapshots = useCallback(async () => {
+    try {
+      const res = await fetch("/api/ai/flow-snapshots");
+      if (res.ok) setSnapshots(await res.json());
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { fetchSnapshots(); }, [fetchSnapshots]);
 
   // --- Actions ---
   async function loadDiff(sha: string) {
@@ -535,14 +748,24 @@ export default function ClaudeMdPage() {
 
           {/* ---- 文件列表 (multi-file mode) ---- */}
           {(() => {
-            // Determine which files to show
+            // Determine which files to show based on scope
             const files: Array<{ label: string; projectPath: string | null; hasMd: boolean }> = [];
-            if (scope === "all" || scope.startsWith("combined:")) {
+
+            if (scope === "all") {
+              // All scope: show global + all projects
               files.push({ label: "全局 CLAUDE.md", projectPath: null, hasMd: true });
               for (const p of projects.filter(pr => pr.hasClaudeMd)) {
                 files.push({ label: `${p.name}/CLAUDE.md`, projectPath: p.path, hasMd: true });
               }
+            } else if (scope.startsWith("project:") || scope.startsWith("combined:")) {
+              // Project scope: show project CLAUDE.md + global for easy switching
+              const proj = projects.find(p => p.path === scopeProjectPath);
+              if (proj?.hasClaudeMd) {
+                files.push({ label: `${proj.name}/CLAUDE.md`, projectPath: proj.path, hasMd: true });
+              }
+              files.push({ label: "全局 CLAUDE.md", projectPath: null, hasMd: true });
             }
+
             if (files.length < 2) return null;
             return (
               <div className="shrink-0">
@@ -752,15 +975,42 @@ export default function ClaudeMdPage() {
               }
             </p>
           </div>
-          {selectedVersion && (
-            <button
-              type="button"
-              onClick={() => setSelectedVersion(null)}
-              className="cursor-pointer rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
-            >
-              返回当前版本
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Profile selector — only show for global CLAUDE.md */}
+            {!activeFile && !selectedVersion && (
+              <>
+                <select
+                  className="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={activeProfileName ?? ""}
+                  onChange={(e) => e.target.value && switchProfile(e.target.value)}
+                  disabled={profileLoading}
+                >
+                  <option value="" disabled>Profile</option>
+                  {profiles.map((p) => (
+                    <option key={p.name} value={p.name}>
+                      {p.name}{p.active ? " ✓" : ""}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowProfileManager(true)}
+                >
+                  管理
+                </Button>
+              </>
+            )}
+            {selectedVersion && (
+              <button
+                type="button"
+                onClick={() => setSelectedVersion(null)}
+                className="cursor-pointer rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+              >
+                返回当前版本
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Uncommitted changes banner */}
@@ -917,12 +1167,39 @@ export default function ClaudeMdPage() {
         {/* ===== Tab: 路由结构分析 ===== */}
         {activeTab === "routes" && (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">路由结构分析</CardTitle>
-              <CardDescription>
-                解析出 {routeTables.length} 个路由表，共 {routeTables.reduce((sum, t) => sum + t.entries.length, 0)} 条路由规则
-                {selectedVersion && <> · 版本 {selectedVersion}</>}
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base">路由结构分析</CardTitle>
+                <CardDescription>
+                  解析出 {routeTables.length} 个路由表，共 {routeTables.reduce((sum, t) => sum + t.entries.length, 0)} 条路由规则
+                  {selectedVersion && <> · 版本 {selectedVersion}</>}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={routeAiLoading}
+                onClick={async () => {
+                  setRouteAiLoading(true);
+                  setRouteAiReport(null);
+                  try {
+                    const res = await fetch("/api/ai/route-analysis", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ routeTables }),
+                    });
+                    const data = await res.json();
+                    if (data.error) setRouteAiReport(`**错误：** ${data.error}`);
+                    else setRouteAiReport(data.report);
+                  } catch {
+                    setRouteAiReport("**错误：** 请求失败");
+                  } finally {
+                    setRouteAiLoading(false);
+                  }
+                }}
+              >
+                {routeAiLoading ? "分析中..." : "AI 分析路由质量"}
+              </Button>
             </CardHeader>
             <CardContent className="max-h-[calc(100vh-340px)] space-y-4 overflow-y-auto">
               {routeTables.map((table, i) => (
@@ -961,6 +1238,16 @@ export default function ClaudeMdPage() {
                   未检测到路由表结构
                 </p>
               )}
+
+              {/* AI 分析报告 */}
+              {routeAiReport && (
+                <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+                  <h4 className="mb-3 text-sm font-semibold text-blue-900 dark:text-blue-200">AI 路由质量分析</h4>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                    <ReactMarkdown>{routeAiReport}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -969,20 +1256,140 @@ export default function ClaudeMdPage() {
         {activeTab === "flow" && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">软编排分析</CardTitle>
-              <CardDescription>
-                自动解析 CLAUDE.md 路由结构，生成编排流程图
-                {selectedVersion && <> · 版本 {selectedVersion}</>}
-                {routeTables.length > 0 && (
-                  <> · {routeTables.length} 个路由表 → {routeTables.reduce((s, t) => s + t.entries.length, 0)} 个 Skill</>
-                )}
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">软编排分析</CardTitle>
+                  <CardDescription>
+                    {flowSource === "parsed" && "代码解析 CLAUDE.md 路由结构"}
+                    {flowSource === "ai" && "AI 生成的编排分析"}
+                    {flowSource === "snapshot" && "快照回放"}
+                    {selectedVersion && <> · 版本 {selectedVersion}</>}
+                    {aiFlowData && flowSource === "ai" && (
+                      <> · {aiFlowData.summary}</>
+                    )}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Source toggle */}
+                  <div className="flex rounded-md border text-xs">
+                    <button
+                      className={`px-2.5 py-1 rounded-l-md transition-colors ${flowSource === "parsed" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                      onClick={() => setFlowSource("parsed")}
+                    >
+                      代码解析
+                    </button>
+                    <button
+                      className={`px-2.5 py-1 border-l transition-colors ${flowSource === "ai" ? "bg-purple-600 text-white" : "hover:bg-muted"}`}
+                      onClick={() => { if (aiFlowData) setFlowSource("ai"); }}
+                      disabled={!aiFlowData}
+                      title={aiFlowData ? "查看 AI 分析结果" : "先运行 AI 分析"}
+                    >
+                      AI 分析
+                    </button>
+                    <button
+                      className={`px-2.5 py-1 rounded-r-md border-l transition-colors ${flowSource === "snapshot" ? "bg-orange-600 text-white" : "hover:bg-muted"}`}
+                      onClick={() => { if (snapshots.length > 0) setFlowSource("snapshot"); }}
+                      disabled={snapshots.length === 0}
+                      title={snapshots.length > 0 ? "查看历史快照" : "暂无快照"}
+                    >
+                      快照{snapshots.length > 0 && ` (${snapshots.length})`}
+                    </button>
+                  </div>
+
+                  {/* AI analyze button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={flowAiLoading}
+                    onClick={async () => {
+                      setFlowAiLoading(true);
+                      setAiFlowData(null);
+                      setAiFlowError(null);
+                      try {
+                        const res = await fetch("/api/ai/orchestration-analysis", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ routeTables }),
+                        });
+                        const data = await res.json();
+                        if (data.error) {
+                          setAiFlowError(data.error);
+                        } else {
+                          setAiFlowData(data.flowData);
+                          setFlowSource("ai");
+                        }
+                      } catch {
+                        setAiFlowError("请求失败");
+                      } finally {
+                        setFlowAiLoading(false);
+                      }
+                    }}
+                  >
+                    {flowAiLoading ? "分析中..." : "AI 编排分析"}
+                  </Button>
+
+                  {/* Save snapshot button (only when AI data is available) */}
+                  {aiFlowData && flowSource === "ai" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={savingSnapshot}
+                      onClick={async () => {
+                        setSavingSnapshot(true);
+                        try {
+                          await fetch("/api/ai/flow-snapshots", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(aiFlowData),
+                          });
+                          await fetchSnapshots();
+                        } catch { /* ignore */ }
+                        finally { setSavingSnapshot(false); }
+                      }}
+                    >
+                      {savingSnapshot ? "保存中..." : "保存快照"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Snapshot list (when in snapshot mode) */}
+              {flowSource === "snapshot" && snapshots.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {snapshots.map((s) => (
+                    <button
+                      key={s.id}
+                      className="rounded-md border px-2 py-1 text-xs hover:bg-muted transition-colors"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/ai/flow-snapshots/${s.id}`);
+                          if (res.ok) {
+                            const snap = await res.json();
+                            setAiFlowData({ nodes: snap.nodes, edges: snap.edges, workflows: snap.workflows, summary: snap.summary });
+                          }
+                        } catch { /* ignore */ }
+                      }}
+                    >
+                      <span className="font-mono text-muted-foreground">{s.gitSha}</span>
+                      <span className="ml-1">{s.summary.slice(0, 30)}</span>
+                      <span className="ml-1 text-muted-foreground">{new Date(s.timestamp).toLocaleDateString()}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Error display */}
+              {aiFlowError && (
+                <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+                  {aiFlowError}
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0">
-              {flowNodes.length > 1 ? (
+              {flowNodes.length > 0 ? (
                 <div className="h-[calc(100vh-340px)] w-full">
                   <ReactFlow
-                    key={selectedVersion || "current"}
+                    key={`${flowSource}-${selectedVersion || "current"}`}
                     nodes={flowNodes}
                     edges={flowEdges}
                     nodeTypes={flowNodeTypes}
@@ -1000,16 +1407,109 @@ export default function ClaudeMdPage() {
                   </ReactFlow>
                 </div>
               ) : (
-                <div className="flex h-[300px] items-center justify-center">
+                <div className="flex h-[300px] flex-col items-center justify-center gap-3">
                   <p className="text-sm text-muted-foreground/60 italic">
-                    未检测到路由结构，无法生成编排图
+                    {flowSource === "parsed" ? "未检测到路由结构" : "暂无数据"}
                   </p>
+                  {flowSource === "parsed" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={flowAiLoading}
+                      onClick={async () => {
+                        setFlowAiLoading(true);
+                        setAiFlowData(null);
+                        setAiFlowError(null);
+                        try {
+                          const res = await fetch("/api/ai/orchestration-analysis", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ routeTables }),
+                          });
+                          const data = await res.json();
+                          if (data.error) {
+                            setAiFlowError(data.error);
+                          } else {
+                            setAiFlowData(data.flowData);
+                            setFlowSource("ai");
+                          }
+                        } catch {
+                          setAiFlowError("请求失败");
+                        } finally {
+                          setFlowAiLoading(false);
+                        }
+                      }}
+                    >
+                      {flowAiLoading ? "分析中..." : "用 AI 生成编排分析"}
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Profile Manager Dialog */}
+      <Dialog open={showProfileManager} onOpenChange={setShowProfileManager}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>管理 CLAUDE.md Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Create new */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="新 Profile 名称"
+                value={newProfileName}
+                onChange={(e) => setNewProfileName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveAsProfile()}
+              />
+              <Button onClick={saveAsProfile} disabled={!newProfileName.trim()} className="shrink-0">
+                保存当前为
+              </Button>
+            </div>
+
+            {/* Profile list */}
+            <div className="space-y-2">
+              {profiles.map((p) => (
+                <div key={p.name} className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{p.name}</span>
+                    {p.active && <Badge variant="default" className="text-[10px]">当前</Badge>}
+                    <span className="text-xs text-muted-foreground">
+                      {(p.size / 1024).toFixed(1)}KB
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {!p.active && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => { switchProfile(p.name); setShowProfileManager(false); }}
+                      >
+                        切换
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-500 hover:text-red-700"
+                      disabled={p.active}
+                      onClick={() => deleteProfileHandler(p.name)}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {profiles.length === 0 && (
+                <p className="text-sm text-muted-foreground">暂无 Profile。点击「保存当前为」创建第一个。</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
