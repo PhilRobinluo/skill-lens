@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import Markdown from "react-markdown";
 import { useSkillMutations } from "@/hooks/use-skill-mutations";
 import { cleanDescriptionFull, skillDisplayName } from "@/lib/utils";
@@ -26,6 +27,7 @@ interface SkillDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
+  onToggle: (skill: SkillEntry, enabled: boolean) => void;
 }
 
 export const SOURCE_LABELS: Record<string, string> = {
@@ -42,6 +44,7 @@ export function SkillDetailSheet({
   open,
   onOpenChange,
   onUpdated,
+  onToggle,
 }: SkillDetailSheetProps) {
   // Local editable state
   const [domains, setDomains] = useState<string[]>([]);
@@ -232,6 +235,16 @@ export function SkillDetailSheet({
               </span>
             )}
           </SheetTitle>
+          <div className="flex items-center gap-2 pt-1">
+            <Switch
+              size="sm"
+              checked={skill.enabled}
+              onCheckedChange={(checked) => onToggle(skill, !!checked)}
+            />
+            <span className={`text-xs ${skill.enabled ? "text-emerald-600" : "text-red-500"}`}>
+              {skill.enabled ? "已启用" : "已禁用"}
+            </span>
+          </div>
           <SheetDescription asChild>
             <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground">
               <Markdown>{cleanDescriptionFull(skill.description) || "无描述"}</Markdown>

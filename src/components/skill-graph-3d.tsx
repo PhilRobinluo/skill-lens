@@ -512,6 +512,14 @@ export function SkillGraph3D({ skills, allSkillNames, onUpdated }: SkillGraph3DP
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         onUpdated={onUpdated}
+        onToggle={async (skill, enabled) => {
+          await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled }),
+          });
+          onUpdated();
+        }}
       />
     </div>
   );

@@ -719,6 +719,14 @@ export default function TagsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onUpdated={fetchAll}
+        onToggle={async (skill, enabled) => {
+          await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled }),
+          });
+          fetchAll();
+        }}
       />
 
       {/* Delete confirm dialog */}
