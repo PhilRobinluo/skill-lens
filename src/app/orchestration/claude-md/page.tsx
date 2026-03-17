@@ -422,6 +422,9 @@ export default function ClaudeMdPage() {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState("");
 
+  // Version tags (stable / experiment)
+  const [versionTags, setVersionTags] = useState<Record<string, string>>({});
+
   // Version browsing
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [selectedVersionContent, setSelectedVersionContent] = useState("");
@@ -499,6 +502,14 @@ export default function ClaudeMdPage() {
     setExpandedDiffs({});
     fetchAll();
   }, [fetchAll]);
+
+  // --- Version tags ---
+  useEffect(() => {
+    fetch("/api/claude-md/version-tag")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.tags) setVersionTags(data.tags); })
+      .catch(() => {});
+  }, []);
 
   // --- Version loading ---
   async function loadVersion(sha: string) {
@@ -626,6 +637,36 @@ export default function ClaudeMdPage() {
     } catch { /* ignore */ }
     setEditingNote(null);
     setNoteInput("");
+  }
+
+  async function toggleVersionTag(sha: string, currentTag: string | undefined) {
+    // Cycle: none → stable → experiment → none
+    let nextTag: string | null;
+    if (!currentTag) nextTag = "stable";
+    else if (currentTag === "stable") nextTag = "experiment";
+    else nextTag = null;
+
+    const res = await fetch("/api/claude-md/version-tag", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sha, tag: nextTag }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setVersionTags(data.tags);
+    }
+  }
+
+  async function restoreVersion(sha: string) {
+    if (!confirm("确定要将 CLAUDE.md 恢复到这个版本吗？当前内容会被覆盖。")) return;
+    const res = await fetch("/api/claude-md/restore", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sha }),
+    });
+    if (res.ok) {
+      await fetchAll();
+    }
   }
 
   function scrollToTocItem(item: TocItem) {
@@ -786,11 +827,23 @@ export default function ClaudeMdPage() {
                           </span>
                         </div>
                         <div className="mt-0.5 truncate text-[11px]">{commit.message}</div>
-                        {versionNotes[commit.sha] && (
-                          <Badge variant="secondary" className="mt-1 text-[9px]">
-                            {versionNotes[commit.sha]}
-                          </Badge>
-                        )}
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          {versionTags[commit.sha] === "stable" && (
+                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              正式版
+                            </span>
+                          )}
+                          {versionTags[commit.sha] === "experiment" && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                              实验版
+                            </span>
+                          )}
+                          {versionNotes[commit.sha] && (
+                            <Badge variant="secondary" className="text-[9px]">
+                              {versionNotes[commit.sha]}
+                            </Badge>
+                          )}
+                        </div>
                       </button>
 
                       {/* 选中版本的操作区 */}
@@ -831,6 +884,25 @@ export default function ClaudeMdPage() {
                               {versionNotes[commit.sha] ? "编辑备注" : "+ 添加备注"}
                             </button>
                           )}
+                          {/* 版本标记 + 恢复 */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); toggleVersionTag(commit.sha, versionTags[commit.sha]); }}
+                              className="text-[10px] text-muted-foreground hover:text-foreground"
+                            >
+                              {!versionTags[commit.sha] && "标记为正式版"}
+                              {versionTags[commit.sha] === "stable" && "切换为实验版"}
+                              {versionTags[commit.sha] === "experiment" && "移除标记"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); restoreVersion(commit.sha); }}
+                              className="rounded border px-1.5 py-0.5 text-[10px] text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/30"
+                            >
+                              恢复
+                            </button>
+                          </div>
                           {/* 查看变更 */}
                           <button
                             type="button"
