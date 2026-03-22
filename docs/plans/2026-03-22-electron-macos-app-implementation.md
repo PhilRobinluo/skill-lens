@@ -19,7 +19,7 @@
 
 Run:
 ```bash
-cd /Users/qihang/work/skill-manager
+cd $PROJECT_ROOT
 pnpm add -D electron electron-builder concurrently wait-on
 ```
 
@@ -72,7 +72,7 @@ git commit -m "chore: add Electron dependencies and build config"
 **Step 1: Create electron directory**
 
 ```bash
-mkdir -p /Users/qihang/work/skill-manager/electron
+mkdir -p $PROJECT_ROOT/electron
 ```
 
 **Step 2: Write main.mjs**
@@ -221,7 +221,7 @@ git commit -m "feat: add Electron main process with tray + main window"
 **Step 1: Create resources directory and generate placeholder icons**
 
 ```bash
-mkdir -p /Users/qihang/work/skill-manager/resources
+mkdir -p $PROJECT_ROOT/resources
 ```
 
 Use existing logo as base — scale down to tray icon size. macOS "Template" images should be black with alpha transparency (the OS handles dark/light mode).
@@ -230,10 +230,10 @@ For now, create a simple placeholder using the existing logo:
 
 ```bash
 # If sips is available on macOS:
-sips -z 44 44 /Users/qihang/work/skill-manager/public/logo-v5-transparent.png \
-  --out /Users/qihang/work/skill-manager/resources/iconTemplate@2x.png
-sips -z 22 22 /Users/qihang/work/skill-manager/public/logo-v5-transparent.png \
-  --out /Users/qihang/work/skill-manager/resources/iconTemplate.png
+sips -z 44 44 $PROJECT_ROOT/public/logo-v5-transparent.png \
+  --out $PROJECT_ROOT/resources/iconTemplate@2x.png
+sips -z 22 22 $PROJECT_ROOT/public/logo-v5-transparent.png \
+  --out $PROJECT_ROOT/resources/iconTemplate.png
 ```
 
 **Step 2: Commit**
@@ -312,7 +312,7 @@ git commit -m "feat: add tray panel page with tag-grouped skill list"
 **Step 1: Verify Next.js dev server works on port 3939**
 
 ```bash
-cd /Users/qihang/work/skill-manager
+cd $PROJECT_ROOT
 pnpm dev -p 3939
 # Visit http://localhost:3939/tray in browser to verify panel renders
 ```
