@@ -166,7 +166,7 @@ pnpm dev
 
 **社区技能追踪列** — 如果你的 Skill 是从社区下载后修改的，表格会直接显示它的来源和你改了多少次。
 
-![upstream-table](docs/screenshots/skills-table-with-upstream-columns.png)
+*(截图待更新)*
 
 **视角联动** — 切换视角后表格内容自动变化，不用手动筛选。
 
@@ -227,15 +227,15 @@ Anthropic（Claude 的开发公司）的官方建议是：CLAUDE.md 是一个需
 | **修改对比** | 展开任意一次修改，绿色是新加的、红色是删掉的，一目了然 |
 | **未保存提醒** | 如果你改了 CLAUDE.md 但还没提交到 Git，会有醒目提示 |
 
-![claudemd-global](docs/screenshots/11-claudemd-global.png)
+*(截图待更新)*
 
 **多个项目的 CLAUDE.md 放在一起看** — 切换到"全部项目"视角时，左边会列出你所有的 CLAUDE.md 文件，点击就能切换：
 
-![claudemd-filelist](docs/screenshots/12-claudemd-all-filelist.png)
+*(截图待更新)*
 
 **查看某个项目的 CLAUDE.md：**
 
-![claudemd-nanoclaw](docs/screenshots/13-claudemd-nanoclaw-file.png)
+*(截图待更新)*
 
 ---
 
@@ -243,11 +243,11 @@ Anthropic（Claude 的开发公司）的官方建议是：CLAUDE.md 是一个需
 
 点击表格里任何一个 Skill，右边会弹出详情面板。这里能看到一个 Skill 的所有信息，分成四个标签页：
 
-![detail](docs/screenshots/skill-detail.png)
+*(截图待更新)*
 
 **总览** — Skill 的描述、它在 CLAUDE.md 中的引用情况、标签编辑、备注
 
-![detail-overview](docs/screenshots/detail-sheet-overview.png)
+*(截图待更新)*
 
 **时间线** — 这个 Skill 文件的修改历史。每次修改都能展开看具体改了什么。
 
@@ -300,7 +300,7 @@ Anthropic（Claude 的开发公司）的官方建议是：CLAUDE.md 是一个需
 
 **分组视图** — 按功能域折叠展开，快速找到某类技能
 
-![grouped](docs/screenshots/view-grouped.gif)
+*(截图待更新)*
 
 **3D 图谱** — 用 3D 球体展示技能关系，换个角度看你的技能库。球体是技能，连线是共享的功能域，颜色代表来源。
 

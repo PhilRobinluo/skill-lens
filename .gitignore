@@ -44,6 +44,11 @@ next-env.d.ts
 data/*.json
 !data/demo-registry.json
 data/*.tmp
+data/claude-md-profiles/
+data/settings.json
+
+# electron-builder output
+dist/
 
 # project-level CLAUDE.md (personal config, not part of the app)
 CLAUDE.md

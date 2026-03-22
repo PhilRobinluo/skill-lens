@@ -21,7 +21,7 @@
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm create next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm
 ```
 
@@ -31,7 +31,7 @@ Expected: Project scaffolded with App Router structure.
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm add @xyflow/react recharts chokidar
 pnpm add -D @types/node
 ```
@@ -40,7 +40,7 @@ pnpm add -D @types/node
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm dlx shadcn@latest init -d
 ```
 
@@ -48,7 +48,7 @@ pnpm dlx shadcn@latest init -d
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm dlx shadcn@latest add badge button card dialog input select separator sheet tabs textarea
 ```
 
@@ -79,7 +79,7 @@ data/*.tmp
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager && pnpm dev
+cd $PROJECT_ROOT && pnpm dev
 ```
 Expected: localhost:3000 shows Next.js default page.
 
@@ -87,7 +87,7 @@ Expected: localhost:3000 shows Next.js default page.
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 git init
 git add .
 git commit -m "chore: scaffold Next.js project with shadcn/ui and dependencies"
@@ -183,7 +183,7 @@ git commit -m "feat: add TypeScript type definitions for skill registry"
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm add -D vitest @testing-library/react @testing-library/jest-dom
 ```
 
@@ -237,26 +237,26 @@ Some body content here`;
 
 describe("detectSource", () => {
   it("detects baoyu skills", () => {
-    expect(detectSource("baoyu-image-gen", "/Users/qihang/.claude/skills/baoyu-image-gen")).toBe("baoyu");
+    expect(detectSource("baoyu-image-gen", "~/.claude/skills/baoyu-image-gen")).toBe("baoyu");
   });
 
   it("detects self-built skills", () => {
-    expect(detectSource("article-workflow", "/Users/qihang/.claude/skills/article-workflow")).toBe("self-built");
+    expect(detectSource("article-workflow", "~/.claude/skills/article-workflow")).toBe("self-built");
   });
 
   it("detects official plugins", () => {
-    expect(detectSource("code-review", "/Users/qihang/.claude/plugins/cache/claude-plugins-official/code-review")).toBe("plugin-official");
+    expect(detectSource("code-review", "~/.claude/plugins/cache/claude-plugins-official/code-review")).toBe("plugin-official");
   });
 
   it("detects community plugins", () => {
-    expect(detectSource("brainstorming", "/Users/qihang/.claude/plugins/cache/superpowers-marketplace/superpowers")).toBe("plugin-community");
+    expect(detectSource("brainstorming", "~/.claude/plugins/cache/superpowers-marketplace/superpowers")).toBe("plugin-community");
   });
 });
 ```
 
 **Step 3: Run test to verify it fails**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm test`
+Run: `cd $PROJECT_ROOT && pnpm test`
 Expected: FAIL — modules not found.
 
 **Step 4: Implement scanner.ts**
@@ -410,7 +410,7 @@ function parseClaudeMdRefs(content: string): Record<string, Array<{ table: strin
 
 **Step 5: Run tests to verify they pass**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm test`
+Run: `cd $PROJECT_ROOT && pnpm test`
 Expected: All scanner tests PASS.
 
 **Step 6: Commit**
@@ -471,7 +471,7 @@ describe("parseClaudeMd", () => {
 
 **Step 2: Run test — should fail**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm test`
+Run: `cd $PROJECT_ROOT && pnpm test`
 
 **Step 3: Implement parser**
 
@@ -530,7 +530,7 @@ export function parseClaudeMd(content: string): Record<string, ClaudeMdRef[]> {
 
 **Step 4: Run tests — should pass**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm test`
+Run: `cd $PROJECT_ROOT && pnpm test`
 
 **Step 5: Commit**
 
@@ -1163,7 +1163,7 @@ Implement `src/app/page.tsx` with:
 
 **Step 5: Verify dashboard renders**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm dev`
+Run: `cd $PROJECT_ROOT && pnpm dev`
 Open localhost:3000 — should show stats from scanned skills.
 
 **Step 6: Commit**
@@ -1245,7 +1245,7 @@ Using React Flow (`@xyflow/react`):
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm add @dagrejs/dagre
 ```
 
@@ -1294,7 +1294,7 @@ Draggable step card showing skill name + role label.
 
 Run:
 ```bash
-cd /Users/qihang/opensource/skill-manager
+cd $PROJECT_ROOT
 pnpm add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 ```
 

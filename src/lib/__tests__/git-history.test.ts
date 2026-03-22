@@ -7,7 +7,7 @@ import { parseGitLogOutput, getSkillGitHistory } from "../git-history";
 describe("parseGitLogOutput", () => {
   it("parses multi-commit output with numstat correctly", () => {
     const output = [
-      "abc1234|||2026-03-01 10:00:00 +0800|||Arthur|||feat: add new feature",
+      "abc1234|||2026-03-01 10:00:00 +0800|||User|||feat: add new feature",
       "10\t5\tSKILL.md",
       "3\t0\tREADME.md",
       "",
@@ -23,7 +23,7 @@ describe("parseGitLogOutput", () => {
     // First commit (newest)
     expect(commits[0].sha).toBe("abc1234");
     expect(commits[0].date).toBe("2026-03-01 10:00:00 +0800");
-    expect(commits[0].author).toBe("Arthur");
+    expect(commits[0].author).toBe("User");
     expect(commits[0].message).toBe("feat: add new feature");
     expect(commits[0].additions).toBe(13);
     expect(commits[0].deletions).toBe(5);
@@ -51,7 +51,7 @@ describe("parseGitLogOutput", () => {
 
   it("handles binary files in numstat (- - notation)", () => {
     const output = [
-      "bbb2222|||2026-02-01 08:00:00 +0800|||Arthur|||feat: add image",
+      "bbb2222|||2026-02-01 08:00:00 +0800|||User|||feat: add image",
       "-\t-\tlogo.png",
       "5\t0\tSKILL.md",
       "",
@@ -67,7 +67,7 @@ describe("parseGitLogOutput", () => {
 
   it("handles message containing separator characters", () => {
     const output = [
-      "ccc3333|||2026-01-15 14:00:00 +0800|||Arthur|||fix: use ||| as separator",
+      "ccc3333|||2026-01-15 14:00:00 +0800|||User|||fix: use ||| as separator",
       "2\t1\tfile.ts",
       "",
     ].join("\n");
@@ -85,7 +85,7 @@ describe("parseGitLogOutput", () => {
 
   it("handles single commit without trailing newline", () => {
     const output =
-      "ddd4444|||2026-03-05 16:00:00 +0800|||Arthur|||init\n7\t0\tSKILL.md";
+      "ddd4444|||2026-03-05 16:00:00 +0800|||User|||init\n7\t0\tSKILL.md";
 
     const commits = parseGitLogOutput(output);
 
