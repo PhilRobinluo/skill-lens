@@ -21,9 +21,14 @@ export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
+  // Electron 环境下给红绿灯按钮留空间
+  const isElectron = typeof window !== "undefined" && !!(window as unknown as Record<string, unknown>).electronAPI;
+
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+        {/* Electron 红绿灯占位 */}
+        {isElectron && <div className="w-16 shrink-0" />}
         <div className="flex items-center gap-4 sm:gap-6">
           {/* Brand name = home link + scope selector */}
           <div className="flex items-center gap-0.5">

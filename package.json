@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "electron/main.mjs",
   "description": "Visual dashboard for Claude Code Skills — scan, browse, tag, and orchestrate your skill library",
-  "author": "Arthur Cai",
+  "author": "Skill Lens Team",
   "license": "MIT",
   "homepage": "https://github.com/arthurai-cai/skill-lens",
   "repository": {
@@ -70,11 +70,11 @@
     "wait-on": "^9.0.4"
   },
   "build": {
-    "appId": "com.arthurai.skill-lens",
+    "appId": "com.skill-lens.app",
     "productName": "Skill Lens",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "resources/icon.icns",
+      "icon": "public/logo-v6-dock.png",
       "target": ["dmg"]
     },
     "files": [
@@ -82,7 +82,10 @@
       "node_modules/**/*",
       "public/**/*",
       "package.json",
-      "electron/**/*"
+      "electron/**/*",
+      "resources/**/*",
+      "src/**/*",
+      "data/**/*"
     ]
   }
 }
