@@ -103,6 +103,13 @@ function createMainWindow() {
 
   mainWindow.loadURL(BASE_URL);
 
+  // 注入 CSS：为红绿灯按钮留出左侧空间
+  mainWindow.webContents.on("dom-ready", () => {
+    mainWindow.webContents.insertCSS(
+      "nav > div:first-child { padding-left: 5rem !important; }"
+    );
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
