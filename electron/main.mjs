@@ -22,10 +22,11 @@ function startServer() {
   if (isDev) return Promise.resolve(); // 开发模式由 concurrently 启动
 
   return new Promise((resolve, reject) => {
-    const nextBin = path.join(ROOT_DIR, "node_modules", ".bin", "next");
-    serverProcess = spawn(nextBin, ["start", "-p", String(PORT)], {
+    // 打包后用 node 直接运行 next，避免 .bin 软链接问题
+    const nextEntry = path.join(ROOT_DIR, "node_modules", "next", "dist", "bin", "next");
+    serverProcess = spawn(process.execPath, [nextEntry, "start", "-p", String(PORT)], {
       cwd: ROOT_DIR,
-      env: { ...process.env, NODE_ENV: "production" },
+      env: { ...process.env, NODE_ENV: "production", ELECTRON_RUN_AS_NODE: "1" },
       stdio: "pipe",
     });
 
