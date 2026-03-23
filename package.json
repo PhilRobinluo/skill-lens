@@ -1,6 +1,6 @@
 {
   "name": "skill-lens",
-  "version": "0.1.0",
+  "version": "3.0.0",
   "main": "electron/main.mjs",
   "description": "Visual dashboard for Claude Code Skills — scan, browse, tag, and orchestrate your skill library",
   "author": "Skill Lens Team",
@@ -36,6 +36,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "electron-updater": "^6.8.3",
     "https-proxy-agent": "^7.0.6",
     "lucide-react": "^0.576.0",
     "next": "16.1.6",
@@ -72,10 +73,17 @@
   "build": {
     "appId": "com.skill-lens.app",
     "productName": "Skill Lens",
+    "publish": {
+      "provider": "github",
+      "owner": "PhilRobinluo",
+      "repo": "skill-lens"
+    },
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "public/logo-v6-dock.png",
-      "target": ["dmg"]
+      "target": [
+        "dmg"
+      ]
     },
     "files": [
       ".next/**/*",

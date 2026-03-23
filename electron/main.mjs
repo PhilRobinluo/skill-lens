@@ -1,7 +1,10 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, clipboard, ipcMain } from "electron";
+import { app, BrowserWindow, Tray, Menu, nativeImage, clipboard, ipcMain, dialog } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const { autoUpdater } = require("electron-updater");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.join(__dirname, "..");
@@ -123,10 +126,57 @@ function createTray() {
   // 右键菜单
   const contextMenu = Menu.buildFromTemplate([
     { label: "打开面板", click: () => createMainWindow() },
+    { label: "检查更新", click: () => {
+      if (isDev) {
+        dialog.showMessageBox({ message: "开发模式下不检查更新" });
+      } else {
+        autoUpdater.checkForUpdates();
+      }
+    }},
     { type: "separator" },
     { label: "退出", click: () => app.quit() },
   ]);
   tray.on("right-click", () => tray.popUpContextMenu(contextMenu));
+}
+
+// ---------- 自动更新 ----------
+function setupAutoUpdater() {
+  if (isDev) return; // 开发模式不检查更新
+
+  autoUpdater.autoDownload = false; // 不自动下载，先问用户
+
+  autoUpdater.on("update-available", (info) => {
+    dialog.showMessageBox({
+      type: "info",
+      title: "发现新版本",
+      message: `Skill Lens ${info.version} 已发布！`,
+      detail: "要现在下载更新吗？",
+      buttons: ["下载更新", "以后再说"],
+      defaultId: 0,
+    }).then((result) => {
+      if (result.response === 0) autoUpdater.downloadUpdate();
+    });
+  });
+
+  autoUpdater.on("update-downloaded", () => {
+    dialog.showMessageBox({
+      type: "info",
+      title: "更新已下载",
+      message: "新版本已下载完成，重启后生效。",
+      buttons: ["立即重启", "稍后重启"],
+      defaultId: 0,
+    }).then((result) => {
+      if (result.response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.error("Auto-update error:", err);
+  });
+
+  // 启动后 5 秒检查一次，之后每 4 小时检查一次
+  setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+  setInterval(() => autoUpdater.checkForUpdates(), 4 * 60 * 60 * 1000);
 }
 
 // ---------- IPC ----------
@@ -160,6 +210,9 @@ app.whenReady().then(async () => {
   } catch (e) {
     console.error("Tray creation failed:", e);
   }
+
+  // 自动更新
+  setupAutoUpdater();
 });
 
 app.on("window-all-closed", () => {
