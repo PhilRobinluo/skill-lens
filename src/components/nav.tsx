@@ -28,7 +28,7 @@ export function Nav() {
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4 sm:px-6">
         {/* Electron 红绿灯占位 */}
-        {isElectron && <div className="w-16 shrink-0" />}
+        {isElectron && <div className="w-[76px] shrink-0" />}
         <div className="flex items-center gap-4 sm:gap-6">
           {/* Brand name = home link + scope selector */}
           <div className="flex items-center gap-0.5">
