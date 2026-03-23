@@ -22,7 +22,10 @@ export function Nav() {
   const { theme, setTheme } = useTheme();
 
   // Electron 环境下给红绿灯按钮留空间
-  const isElectron = typeof window !== "undefined" && !!(window as unknown as Record<string, unknown>).electronAPI;
+  const [isElectron, setIsElectron] = useState(false);
+  useEffect(() => {
+    setIsElectron(!!(window as unknown as Record<string, unknown>).electronAPI);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
