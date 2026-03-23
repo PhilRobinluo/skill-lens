@@ -4,6 +4,7 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant electron (&:is(.electron *));
 
 @theme inline {
   --color-background: var(--background);
