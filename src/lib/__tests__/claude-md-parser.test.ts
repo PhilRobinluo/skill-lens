@@ -229,7 +229,7 @@ Some instructions here.
     const content = fs.readFileSync(claudeMdPath, "utf-8");
     const result = parseClaudeMd(content);
 
-    // We know these skills are in Arthur's CLAUDE.md routing tables
+    // We know these skills are in the user's CLAUDE.md routing tables
     expect(result["obsidian-note-writer-沉淀系统"]).toBeDefined();
     expect(result["ai-task-system"]).toBeDefined();
     expect(result["article-workflow"]).toBeDefined();

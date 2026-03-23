@@ -1,10 +1,10 @@
-# 技能透镜 Skill Lens `v2.1`
+# 技能透镜 Skill Lens `v3.0`
 
-**一个装在你电脑上的 Claude Code 技能管理工具。**
+**一个装在你电脑上的 Claude Code 技能管理工具。现在有桌面 App 了。**
 
 你用 Claude Code 越多，攒下来的 Skill 就越多。10 个的时候还记得住，50 个以上就开始混乱了 — 不记得哪个干什么、不知道哪个在被用、改了 CLAUDE.md 也不记得改了什么。
 
-技能透镜就是解决这个问题的。它跑在你自己的电脑上（`localhost:3000`），自动扫描你所有的 Skill 文件，变成一个看得见、管得了的仪表盘。
+技能透镜就是解决这个问题的。它是一个 **macOS 桌面应用**，自动扫描你所有的 Skill 文件，变成一个看得见、管得了的仪表盘。菜单栏常驻图标，随时一点就能搜索和管理你的技能。
 
 **所有数据都在你本地，不上传任何内容。你可以随时删掉整个工具，你的 Skill 文件一个字都不会被改。**
 
@@ -60,19 +60,23 @@
 
 ---
 
-## 安装（30 秒）
+## 安装
 
-**前提条件**：你的电脑需要有 [Node.js](https://nodejs.org/)（18 以上版本）和 [pnpm](https://pnpm.io/)。如果没有，先装这两个。
+### 方式一：下载桌面 App（推荐）
 
-**方式一：一行命令搞定**
+直接下载安装，不需要装任何开发工具。
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/PhilRobinluo/skill-lens/main/install.sh | bash
-```
+1. 去 [Releases 页面](https://github.com/PhilRobinluo/skill-lens/releases/latest) 下载 `Skill Lens-x.x.x-arm64.dmg`
+2. 双击打开 DMG，把 Skill Lens 拖到 Applications 文件夹
+3. 打开 Skill Lens，完成
 
-这个脚本会自动帮你：下载代码 → 安装依赖 → 启动服务 → 打开浏览器。
+**系统要求**：macOS（Apple Silicon / M 系列芯片）
 
-**方式二：手动安装**
+### 方式二：命令行安装（开发者）
+
+如果你更喜欢用命令行，或者想参与开发：
+
+**前提条件**：[Node.js](https://nodejs.org/)（18+）和 [pnpm](https://pnpm.io/)。
 
 ```bash
 git clone https://github.com/PhilRobinluo/skill-lens.git
@@ -166,7 +170,7 @@ pnpm dev
 
 **社区技能追踪列** — 如果你的 Skill 是从社区下载后修改的，表格会直接显示它的来源和你改了多少次。
 
-![upstream-table](docs/screenshots/skills-table-with-upstream-columns.png)
+*(截图待更新)*
 
 **视角联动** — 切换视角后表格内容自动变化，不用手动筛选。
 
@@ -227,15 +231,15 @@ Anthropic（Claude 的开发公司）的官方建议是：CLAUDE.md 是一个需
 | **修改对比** | 展开任意一次修改，绿色是新加的、红色是删掉的，一目了然 |
 | **未保存提醒** | 如果你改了 CLAUDE.md 但还没提交到 Git，会有醒目提示 |
 
-![claudemd-global](docs/screenshots/11-claudemd-global.png)
+*(截图待更新)*
 
 **多个项目的 CLAUDE.md 放在一起看** — 切换到"全部项目"视角时，左边会列出你所有的 CLAUDE.md 文件，点击就能切换：
 
-![claudemd-filelist](docs/screenshots/12-claudemd-all-filelist.png)
+*(截图待更新)*
 
 **查看某个项目的 CLAUDE.md：**
 
-![claudemd-nanoclaw](docs/screenshots/13-claudemd-nanoclaw-file.png)
+*(截图待更新)*
 
 ---
 
@@ -243,11 +247,11 @@ Anthropic（Claude 的开发公司）的官方建议是：CLAUDE.md 是一个需
 
 点击表格里任何一个 Skill，右边会弹出详情面板。这里能看到一个 Skill 的所有信息，分成四个标签页：
 
-![detail](docs/screenshots/skill-detail.png)
+*(截图待更新)*
 
 **总览** — Skill 的描述、它在 CLAUDE.md 中的引用情况、标签编辑、备注
 
-![detail-overview](docs/screenshots/detail-sheet-overview.png)
+*(截图待更新)*
 
 **时间线** — 这个 Skill 文件的修改历史。每次修改都能展开看具体改了什么。
 
@@ -300,7 +304,7 @@ Anthropic（Claude 的开发公司）的官方建议是：CLAUDE.md 是一个需
 
 **分组视图** — 按功能域折叠展开，快速找到某类技能
 
-![grouped](docs/screenshots/view-grouped.gif)
+*(截图待更新)*
 
 **3D 图谱** — 用 3D 球体展示技能关系，换个角度看你的技能库。球体是技能，连线是共享的功能域，颜色代表来源。
 
@@ -446,6 +450,15 @@ SKILL_DIRS=/你的路径1,/你的路径2 pnpm dev
 
 ## 更新日志
 
+### v3.0（2026-03-23）— macOS 桌面 App
+
+- **桌面应用** — 打包成 macOS .app，双击即用，不需要命令行
+- **菜单栏快捷面板** — 右上角常驻图标，点击弹出快捷面板，搜索/浏览/启用禁用 Skill
+- **Dock 图标** — 自定义彩虹台灯图标，关闭窗口后点 Dock 图标可重新打开
+- **右键菜单** — 菜单栏图标右键可打开面板或退出
+- **隐私保护** — 新增 pre-push 隐私检查，自动拦截个人路径和密钥泄露
+- **GitHub Release** — 首次发布可下载的安装包（.dmg）
+
 ### v2.1（2026-03-17）— 技能禁用/启用
 
 - **技能禁用/启用** — 一键开关，禁用后 Claude Code 不再加载该 Skill
@@ -485,10 +498,11 @@ SKILL_DIRS=/你的路径1,/你的路径2 pnpm dev
 
 ## 接下来要做的
 
+- [ ] Intel Mac 支持 — 当前只支持 Apple Silicon
+- [ ] 自动更新 — 有新版本时自动提示升级
 - [ ] 英文版本 — 国际化支持
 - [ ] 性能优化 — 大量 Skill 时的加载速度
 - [ ] 批量禁用/启用 — 一次操作多个 Skill
-- [ ] 批量打标签
 - [ ] 编排画布与 CLAUDE.md 联动
 - [ ] 更多 AI 分析能力
 
@@ -508,12 +522,14 @@ SKILL_DIRS=/你的路径1,/你的路径2 pnpm dev
 git clone https://github.com/PhilRobinluo/skill-lens.git
 cd skill-lens
 pnpm install
-pnpm dev       # 启动开发服务器 http://localhost:3000
-pnpm build     # 构建检查
-pnpm test      # 运行测试
+pnpm dev              # 启动 Web 开发服务器 http://localhost:3000
+pnpm electron:dev     # 启动 Electron 桌面 App（开发模式）
+pnpm electron:build   # 打包成 .dmg 安装包
+pnpm build            # 构建检查
+pnpm test             # 运行测试
 ```
 
-**技术栈**：Next.js 16 + TypeScript + shadcn/ui + Tailwind CSS + TanStack Table + React Flow + recharts
+**技术栈**：Next.js 16 + TypeScript + Electron + shadcn/ui + Tailwind CSS + TanStack Table + React Flow + recharts
 
 ---
 

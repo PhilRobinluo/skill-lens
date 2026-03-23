@@ -7,7 +7,7 @@
 
 ## 背景
 
-Arthur 的 Skill 数量已超过 130 个，Claude Code 每次会话都加载全部 Skill，造成上下文压力。需要：
+用户的 Skill 数量已超过 130 个，Claude Code 每次会话都加载全部 Skill，造成上下文压力。需要：
 
 1. **Skill 禁用**：真正让 Claude Code 不加载某些 Skill（自建 + 插件都要支持）
 2. **CLAUDE.md 版本管理**：在 Git 历史中标记/恢复版本，用于调试

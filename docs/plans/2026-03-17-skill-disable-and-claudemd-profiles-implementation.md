@@ -27,7 +27,7 @@
 
 **Step 2: 验证类型检查**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit 2>&1 | head -30`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit 2>&1 | head -30`
 Expected: 多处报错 — `enabled` 缺失（buildSkillEntry 等处），这是正常的，下一个 Task 修复。
 
 **Step 3: Commit**
@@ -144,7 +144,7 @@ async function buildSkillEntry(
 
 **Step 7: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit 2>&1 | head -20`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit 2>&1 | head -20`
 Expected: PASS（无类型错误）
 
 **Step 8: Commit**
@@ -219,7 +219,7 @@ export async function PATCH(
 
 **Step 2: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit 2>&1 | head -10`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit 2>&1 | head -10`
 Expected: PASS
 
 **Step 3: Commit**
@@ -302,7 +302,7 @@ import { Switch } from "@/components/ui/switch";
 
 **Step 5: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit 2>&1 | head -20`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit 2>&1 | head -20`
 Expected: 可能在引用 getColumns 的地方报错（缺少 onToggle 参数），下一步修复。
 
 **Step 6: Commit**
@@ -346,7 +346,7 @@ enabled: "启用",
 
 **Step 3: 验证编译 + 启动开发服务器测试**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit`
 Expected: PASS
 
 **Step 4: Commit**
@@ -402,7 +402,7 @@ import { Switch } from "@/components/ui/switch";
 
 **Step 5: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit`
 Expected: PASS
 
 **Step 6: Commit**
@@ -444,7 +444,7 @@ disabledSkills,
 
 **Step 4: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit`
 Expected: PASS
 
 **Step 5: Commit**
@@ -617,7 +617,7 @@ export async function renameProfile(oldName: string, newName: string): Promise<v
 
 **Step 2: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit`
 Expected: PASS
 
 **Step 3: Commit**
@@ -756,7 +756,7 @@ export async function PUT(
 
 **Step 4: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit`
 Expected: PASS
 
 **Step 5: Commit**
@@ -943,7 +943,7 @@ import { Input } from "@/components/ui/input";
 
 **Step 6: 验证编译**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm tsc --noEmit`
+Run: `cd $PROJECT_ROOT && pnpm tsc --noEmit`
 Expected: PASS
 
 **Step 7: Commit**
@@ -959,7 +959,7 @@ git commit -m "feat: add CLAUDE.md profile selector and manager UI"
 
 **Step 1: 启动开发服务器**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm dev`
+Run: `cd $PROJECT_ROOT && pnpm dev`
 
 **Step 2: 测试 Skill 禁用**
 
@@ -979,7 +979,7 @@ Run: `cd /Users/qihang/opensource/skill-manager && pnpm dev`
 
 **Step 4: 构建验证**
 
-Run: `cd /Users/qihang/opensource/skill-manager && pnpm build`
+Run: `cd $PROJECT_ROOT && pnpm build`
 Expected: PASS
 
 **Step 5: Commit**

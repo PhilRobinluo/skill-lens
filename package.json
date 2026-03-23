@@ -1,8 +1,9 @@
 {
   "name": "skill-lens",
-  "version": "0.1.0",
+  "version": "3.0.0",
+  "main": "electron/main.mjs",
   "description": "Visual dashboard for Claude Code Skills — scan, browse, tag, and orchestrate your skill library",
-  "author": "Arthur Cai",
+  "author": "Skill Lens Team",
   "license": "MIT",
   "homepage": "https://github.com/arthurai-cai/skill-lens",
   "repository": {
@@ -22,7 +23,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "electron:dev": "concurrently -k \"next dev -p 3939\" \"wait-on http://localhost:3939 && electron electron/main.mjs\"",
+    "electron:build": "next build && electron-builder",
+    "electron:start": "electron electron/main.mjs"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
@@ -32,9 +36,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "electron-updater": "^6.8.3",
     "https-proxy-agent": "^7.0.6",
     "lucide-react": "^0.576.0",
     "next": "16.1.6",
+    "next-themes": "^0.4.6",
     "openai": "^6.25.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
@@ -52,12 +58,43 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.183.1",
+    "concurrently": "^9.2.1",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.skill-lens.app",
+    "productName": "Skill Lens",
+    "asar": false,
+    "publish": {
+      "provider": "github",
+      "owner": "PhilRobinluo",
+      "repo": "skill-lens"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "public/logo-v6-dock.png",
+      "target": [
+        "dmg"
+      ]
+    },
+    "files": [
+      ".next/**/*",
+      "node_modules/**/*",
+      "public/**/*",
+      "package.json",
+      "electron/**/*",
+      "resources/**/*",
+      "src/**/*",
+      "data/**/*"
+    ]
   }
 }

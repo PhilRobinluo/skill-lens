@@ -170,7 +170,7 @@ describe("parseGitLogOutput", () => {
 describe("getSkillGitHistory", () => {
   it("returns history for a known skill (integration)", async () => {
     const history = await getSkillGitHistory(
-      "/Users/qihang/.claude",
+      "~/.claude",
       "skills/ai-task-system"
     );
     expect(history.totalCommits).toBeGreaterThan(0);
@@ -183,7 +183,7 @@ describe("getSkillGitHistory", () => {
 
   it("returns zero history for nonexistent path", async () => {
     const history = await getSkillGitHistory(
-      "/Users/qihang/.claude",
+      "~/.claude",
       "skills/definitely-nonexistent-skill-xyz"
     );
     expect(history.totalCommits).toBe(0);
