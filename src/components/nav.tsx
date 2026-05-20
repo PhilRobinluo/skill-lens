@@ -8,18 +8,17 @@ import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { ScopeSelector } from "@/components/scope-selector";
-
-const links = [
-  { href: "/tags", label: "管理" },
-  { href: "/skills", label: "浏览" },
-  { href: "/orchestration", label: "编排" },
-  { href: "/openclaw", label: "🦞 OpenClaw" },
-];
+import { RuntimeSwitcher } from "@/components/runtime-switcher";
 
 export function Nav() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const links = [
+    { href: "/tags", label: "管理" },
+    { href: "/skills", label: "浏览" },
+    { href: "/orchestration", label: "规则" },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -59,6 +58,8 @@ export function Nav() {
         </div>
 
         <div className="flex items-center gap-3">
+          <RuntimeSwitcher />
+
           {/* Watcher indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="relative flex h-2.5 w-2.5">

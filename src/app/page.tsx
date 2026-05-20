@@ -69,7 +69,7 @@ export default function DashboardPage() {
   const [updatesAvailable, setUpdatesAvailable] = useState<number>(0);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const { status: settingsStatus } = useSettings();
-  const { scope, scopeParam } = useScope();
+  const { runtime, scope, scopeParam } = useScope();
 
   const fetchStats = useCallback(async () => {
     try {
@@ -88,11 +88,11 @@ export default function DashboardPage() {
   }, [fetchStats]);
 
   useEffect(() => {
-    fetch("/api/projects")
+    fetch(`/api/projects?runtime=${runtime}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.projects) setProjects(data.projects); })
       .catch(() => {});
-  }, []);
+  }, [runtime]);
 
   useEffect(() => {
     fetch("/api/upstream/check")
@@ -133,15 +133,17 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          总览
+          总览 · {runtime === "codex" ? "Codex" : "Claude"}
           {scope !== "global" && (
             <span className="ml-2 text-base font-normal text-muted-foreground">
-              · {scope.startsWith("combined:") ? "复合视角" : "项目视角"}
+              · 项目视角
             </span>
           )}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {scope === "global"
+          {runtime === "codex"
+            ? "Codex skill 生态视图 — 全局看 AGENTS.md 与全局 skills，项目视图只看当前项目"
+            : scope === "global"
             ? `技能生态全局视图 — ${projects.length} 个项目 · 数量、分布、健康度一目了然`
             : "当前视角下的技能概览"
           }
@@ -156,9 +158,9 @@ export default function DashboardPage() {
           description="已扫描的全部技能"
         />
         <StatCard
-          title="路由表引用"
+          title={runtime === "codex" ? "规则可见" : "路由表引用"}
           value={stats.routedSkills}
-          description="在 CLAUDE.md 中被引用"
+          description={runtime === "codex" ? "由 AGENTS.md / Skill 描述识别" : "在 CLAUDE.md 中被引用"}
           icon={
             <svg
               className="h-4 w-4 text-green-500"
@@ -176,9 +178,9 @@ export default function DashboardPage() {
           }
         />
         <StatCard
-          title="孤立技能"
+          title={runtime === "codex" ? "待梳理" : "孤立技能"}
           value={stats.orphanSkills}
-          description="未被任何路由表引用"
+          description={runtime === "codex" ? "缺少清晰入口规则或描述" : "未被任何路由表引用"}
           warning={stats.orphanSkills > stats.totalSkills * 0.5}
         />
         <StatCard
@@ -356,7 +358,9 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="text-base">项目生态</CardTitle>
             <CardDescription>
-              {projects.length} 个项目 · {projects.filter(p => p.hasSkills).length} 个有项目级 Skill · {projects.filter(p => p.hasClaudeMd).length} 个有 CLAUDE.md
+              {runtime === "codex"
+                ? `${projects.length} 个项目 · ${projects.filter(p => p.hasSkills).length} 个有项目级 Skill · ${projects.filter(p => p.hasAgentsMd).length} 个有 AGENTS.md`
+                : `${projects.length} 个项目 · ${projects.filter(p => p.hasSkills).length} 个有项目级 Skill · ${projects.filter(p => p.hasClaudeMd).length} 个有 CLAUDE.md`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -369,9 +373,9 @@ export default function DashboardPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{project.name}</p>
                     <div className="mt-1 flex items-center gap-2">
-                      {project.hasClaudeMd && (
+                      {(runtime === "codex" ? project.hasAgentsMd : project.hasClaudeMd) && (
                         <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                          CLAUDE.md
+                          {runtime === "codex" ? "AGENTS.md" : "CLAUDE.md"}
                         </span>
                       )}
                       {project.skillCount > 0 && (

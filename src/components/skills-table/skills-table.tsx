@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getColumns, type ColumnCallbacks, type SkillTableMeta } from "./columns";
+import { getColumns, SOURCE_BADGE_STYLES, type ColumnCallbacks, type SkillTableMeta } from "./columns";
 import { TableToolbar } from "./table-toolbar";
 import { filterSkills } from "./table-filter-builder";
 import { TagManager } from "@/components/tag-manager";
@@ -51,12 +51,15 @@ interface SkillsTableProps {
   onNameClick: (skill: SkillEntry) => void;
   onUpdated: () => void;
   callStatsMap?: Record<string, SkillCallStats>;
+  readOnly?: boolean;
 }
 
-export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callStatsMap }: SkillsTableProps) {
+export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callStatsMap, readOnly = false }: SkillsTableProps) {
+  const hasCallStatsSource = Boolean(callStatsMap && Object.keys(callStatsMap).length > 0);
   // Direct API call for domain changes (avoids stale closure with useSkillMutations)
   const patchDomain = useCallback(
     async (skillName: string, domains: string[]) => {
+      if (readOnly) return;
       await fetch(`/api/skills/${encodeURIComponent(skillName)}/tags`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -64,15 +67,13 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
       });
       onUpdated();
     },
-    [onUpdated],
+    [onUpdated, readOnly],
   );
 
   // Table state
-  const [sorting, setSorting] = useState<SortingState>(() => loadJson(LS_SORTING, []));
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() =>
-    loadJson(LS_COLUMN_VIS, {}),
-  );
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState("");
   const [groupingKey, setGroupingKey] = useState("none");
   const [grouping, setGrouping] = useState<GroupingState>([]);
@@ -80,6 +81,16 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
 
   // Tag manager sheet
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSorting(loadJson(LS_SORTING, []));
+      setColumnVisibility(loadJson(LS_COLUMN_VIS, {}));
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   // Rescan state
   const [rescanning, setRescanning] = useState(false);
@@ -117,6 +128,7 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
   // Toggle enabled/disabled
   const toggleSkill = useCallback(
     async (skill: SkillEntry, enabled: boolean) => {
+      if (readOnly) return;
       await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -124,7 +136,7 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
       });
       onUpdated();
     },
-    [onUpdated],
+    [onUpdated, readOnly],
   );
 
   // Column callbacks
@@ -136,17 +148,33 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
       },
       onToggle: toggleSkill,
       allDomains,
+      readOnly,
     }),
-    [onNameClick, patchDomain, toggleSkill, allDomains],
+    [onNameClick, patchDomain, toggleSkill, allDomains, readOnly],
   );
 
   const columns = useMemo(() => getColumns(callbacks, callStatsMap), [callbacks, callStatsMap]);
 
   // Pass callStatsMap through table meta (avoids stale closure issues with column defs)
   const tableMeta: SkillTableMeta = useMemo(
-    () => ({ callStatsMap }),
-    [callStatsMap],
+    () => ({ callStatsMap, hasCallStatsSource }),
+    [callStatsMap, hasCallStatsSource],
   );
+
+  const filterValueOptions = useMemo(() => {
+    const sourceOptions = Array.from(new Set(skills.map((skill) => skill.source))).map((source) => ({
+      value: source,
+      label: SOURCE_BADGE_STYLES[source]?.label ?? source,
+    }));
+    const hasCodex = skills.some((skill) => skill.source.startsWith("codex-"));
+    return {
+      source: sourceOptions,
+      status: [
+        { value: "routed", label: hasCodex ? "规则可见 / 已路由" : "已路由" },
+        { value: "orphan", label: hasCodex ? "待规则 / 孤立" : "孤立" },
+      ],
+    };
+  }, [skills]);
 
   // Grouping sync
   useEffect(() => {
@@ -202,6 +230,7 @@ export function SkillsTable({ skills, allDomains, onNameClick, onUpdated, callSt
         onTagManagerOpen={() => setTagManagerOpen(true)}
         onRescan={handleRescan}
         rescanning={rescanning}
+        filterValueOptions={filterValueOptions}
       />
 
       <div className="rounded-md border">

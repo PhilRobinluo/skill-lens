@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -17,8 +17,16 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import Markdown from "react-markdown";
 import { useSkillMutations } from "@/hooks/use-skill-mutations";
+import { useScope } from "@/contexts/scope-context";
 import { cleanDescriptionFull, skillDisplayName } from "@/lib/utils";
 import type { SkillEntry, SkillGitHistory, ModificationType, FileNode } from "@/lib/types";
+
+interface UpstreamCheckItem {
+  marketplace: string;
+  pluginName: string;
+  commitsAvailable: number;
+  changelog: Array<{ sha: string; date: string; author: string; message: string }>;
+}
 
 interface SkillDetailSheetProps {
   skill: SkillEntry | null;
@@ -35,17 +43,24 @@ export const SOURCE_LABELS: Record<string, string> = {
   baoyu: "宝玉系列",
   "plugin-official": "官方插件",
   "plugin-community": "社区插件",
+  "codex-user": "Codex 自建",
+  "codex-system": "Codex 系统",
+  "codex-plugin": "Codex 插件",
+  "codex-agent-shared": "Agents 共享",
+  "codex-project": "Codex 项目",
 };
 
 export function SkillDetailSheet({
   skill,
-  allSkillNames,
   allDomains,
   open,
   onOpenChange,
   onUpdated,
   onToggle,
 }: SkillDetailSheetProps) {
+  const { runtime } = useScope();
+  const ruleFileName = runtime === "codex" ? "AGENTS.md" : "CLAUDE.md";
+  const isCodexRuntime = runtime === "codex";
   // Local editable state
   const [domains, setDomains] = useState<string[]>([]);
   const [domainInput, setDomainInput] = useState("");
@@ -87,8 +102,19 @@ export function SkillDetailSheet({
   const { patchTags, debouncedPatchNotes } =
     useSkillMutations({ skillName: skill?.name ?? null, onUpdated });
 
+  const skillApiUrl = useCallback(
+    (suffix: string, params: Record<string, string> = {}) => {
+      if (!skill) return "";
+      const searchParams = new URLSearchParams(params);
+      searchParams.set("runtime", runtime);
+      return `/api/skills/${encodeURIComponent(skill.name)}${suffix}?${searchParams.toString()}`;
+    },
+    [runtime, skill],
+  );
+
   // Handlers
   function addDomain(d: string) {
+    if (isCodexRuntime) return;
     const trimmed = d.trim();
     if (!trimmed || domains.includes(trimmed)) return;
     const next = [...domains, trimmed];
@@ -99,6 +125,7 @@ export function SkillDetailSheet({
   }
 
   function removeDomain(d: string) {
+    if (isCodexRuntime) return;
     const next = domains.filter((x) => x !== d);
     setDomains(next);
     patchTags({ domain: next });
@@ -127,6 +154,7 @@ export function SkillDetailSheet({
 
   function handleNotesChange(value: string) {
     setNotes(value);
+    if (isCodexRuntime) return;
     debouncedPatchNotes(value);
   }
 
@@ -135,7 +163,7 @@ export function SkillDetailSheet({
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const res = await fetch(`/api/skills/${encodeURIComponent(skill.name)}/history`);
+      const res = await fetch(skillApiUrl("/history"));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setGitHistory(await res.json());
     } catch (err) {
@@ -157,9 +185,7 @@ export function SkillDetailSheet({
     setFileContent(null);
     setFileContentError(null);
     try {
-      const res = await fetch(
-        `/api/skills/${encodeURIComponent(skill.name)}/content?file=${encodeURIComponent(relativePath)}`
-      );
+      const res = await fetch(skillApiUrl("/content", { file: relativePath }));
       if (res.ok) {
         const data = await res.json();
         setFileContent(data.content);
@@ -176,7 +202,7 @@ export function SkillDetailSheet({
 
   function openFileInEditor(relativePath?: string) {
     if (!skill) return;
-    fetch(`/api/skills/${encodeURIComponent(skill.name)}/open`, {
+    fetch(skillApiUrl("/open"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(relativePath ? { file: relativePath } : {}),
@@ -190,7 +216,7 @@ export function SkillDetailSheet({
     let cancelled = false;
     async function fetchTree() {
       try {
-        const res = await fetch(`/api/skills/${encodeURIComponent(skill!.name)}/files`);
+        const res = await fetch(skillApiUrl("/files"));
         if (res.ok && !cancelled) {
           const data = await res.json();
           setFileTree(data.files);
@@ -210,11 +236,11 @@ export function SkillDetailSheet({
     fetchTree();
 
     return () => { cancelled = true; };
-  }, [skill, open]);
+  }, [skill, open, skillApiUrl]);
 
   if (!skill) return null;
 
-  const isRouted = skill.claudeMdRefs.length > 0;
+  const isRouted = isCodexRuntime ? skill.enabled : skill.claudeMdRefs.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -239,6 +265,7 @@ export function SkillDetailSheet({
             <Switch
               size="sm"
               checked={skill.enabled}
+              disabled={isCodexRuntime}
               onCheckedChange={(checked) => onToggle(skill, !!checked)}
             />
             <span className={`text-xs ${skill.enabled ? "text-emerald-600" : "text-red-500"}`}>
@@ -279,7 +306,7 @@ export function SkillDetailSheet({
                 <button
                   type="button"
                   onClick={() => {
-                    fetch(`/api/skills/${encodeURIComponent(skill.name)}/open`, {
+                    fetch(skillApiUrl("/open"), {
                       method: "POST",
                     });
                   }}
@@ -292,11 +319,11 @@ export function SkillDetailSheet({
             </div>
           </section>
 
-          {/* CLAUDE.md References — always visible */}
+          {/* Runtime rule references — always visible */}
           <Separator />
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">
-              CLAUDE.md 路由
+              {ruleFileName} 规则
             </h3>
             {skill.claudeMdRefs.length > 0 ? (
               <div className="overflow-x-auto rounded-md border">
@@ -321,7 +348,7 @@ export function SkillDetailSheet({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground/60 italic">
-                未被 CLAUDE.md 路由表引用
+                {runtime === "codex" ? "Codex 模式下按 AGENTS.md / Skill 描述识别，不使用 CLAUDE.md 路由表。" : "未被 CLAUDE.md 路由表引用"}
               </p>
             )}
           </section>
@@ -334,16 +361,18 @@ export function SkillDetailSheet({
               Domain Tags
             </h3>
             <div className="flex flex-wrap gap-1.5">
-              {domains.map((d) => (
-                <Badge key={d} variant="secondary" className="gap-1 pr-1">
+                {domains.map((d) => (
+                 <Badge key={d} variant="secondary" className="gap-1 pr-1">
                   {d}
-                  <button
-                    onClick={() => removeDomain(d)}
-                    className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
-                    aria-label={`Remove ${d}`}
-                  >
-                    <span className="text-xs">&times;</span>
-                  </button>
+                  {!isCodexRuntime && (
+                    <button
+                      onClick={() => removeDomain(d)}
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                      aria-label={`Remove ${d}`}
+                    >
+                      <span className="text-xs">&times;</span>
+                    </button>
+                  )}
                 </Badge>
               ))}
             </div>
@@ -353,6 +382,7 @@ export function SkillDetailSheet({
                 value={domainInput}
                 onChange={(e) => handleDomainInputChange(e.target.value)}
                 onKeyDown={handleDomainKeyDown}
+                disabled={isCodexRuntime}
                 onBlur={() =>
                   setTimeout(() => setShowDomainSuggestions(false), 150)
                 }
@@ -393,6 +423,7 @@ export function SkillDetailSheet({
               placeholder="Add notes about this skill..."
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
+              readOnly={isCodexRuntime}
               className="min-h-[80px] text-sm"
             />
           </section>
@@ -469,11 +500,11 @@ export function SkillDetailSheet({
             </TabsContent>
 
             <TabsContent value="timeline" className="pt-4">
-              <TimelineTab history={gitHistory} loading={historyLoading} error={historyError} skillName={skill.name} />
+              <TimelineTab history={gitHistory} loading={historyLoading} error={historyError} skillName={skill.name} runtime={runtime} />
             </TabsContent>
 
             <TabsContent value="upstream" className="pt-4">
-              <UpstreamTab skill={skill} onUpdated={onUpdated} />
+              <UpstreamTab skill={skill} runtime={runtime} onUpdated={onUpdated} />
             </TabsContent>
           </Tabs>
         </div>
@@ -562,7 +593,19 @@ function FileTreeView({
   );
 }
 
-function TimelineTab({ history, loading, error, skillName }: { history: SkillGitHistory | null; loading: boolean; error: string | null; skillName: string }) {
+function TimelineTab({
+  history,
+  loading,
+  error,
+  skillName,
+  runtime,
+}: {
+  history: SkillGitHistory | null;
+  loading: boolean;
+  error: string | null;
+  skillName: string;
+  runtime: "claude" | "codex";
+}) {
   const [expandedDiffs, setExpandedDiffs] = useState<Record<string, string>>({});
   const [loadingDiffs, setLoadingDiffs] = useState<Record<string, boolean>>({});
 
@@ -577,7 +620,8 @@ function TimelineTab({ history, loading, error, skillName }: { history: SkillGit
     }
     setLoadingDiffs((prev) => ({ ...prev, [sha]: true }));
     try {
-      const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}/diff?sha=${sha}`);
+      const params = new URLSearchParams({ sha, runtime });
+      const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}/diff?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setExpandedDiffs((prev) => ({ ...prev, [sha]: data.diff }));
@@ -670,7 +714,15 @@ const MOD_LABELS: Record<ModificationType, { label: string; className: string }>
   config: { label: "环境适配", className: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300" },
 };
 
-function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () => void }) {
+function UpstreamTab({
+  skill,
+  runtime,
+  onUpdated,
+}: {
+  skill: SkillEntry;
+  runtime: "claude" | "codex";
+  onUpdated: () => void;
+}) {
   const upstream = skill.upstream;
   const [updateInfo, setUpdateInfo] = useState<{ commitsAvailable: number; changelog: Array<{ sha: string; date: string; author: string; message: string }> } | null>(null);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -688,7 +740,7 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
         if (res.ok && !cancelled) {
           const data = await res.json();
           // Find update info matching this skill's origin
-          const match = data.updates?.find((u: any) =>
+          const match = (data.updates as UpstreamCheckItem[] | undefined)?.find((u) =>
             upstream!.origin.includes(u.marketplace) ||
             upstream!.origin.includes(u.pluginName)
           );
@@ -832,13 +884,13 @@ function UpstreamTab({ skill, onUpdated }: { skill: SkillEntry; onUpdated: () =>
 
       {/* Blame view for modified skills */}
       {upstream.localModified && (
-        <BlameSection skillName={skill.name} />
+        <BlameSection skillName={skill.name} runtime={runtime} />
       )}
     </div>
   );
 }
 
-function BlameSection({ skillName }: { skillName: string }) {
+function BlameSection({ skillName, runtime }: { skillName: string; runtime: "claude" | "codex" }) {
   const [blameLines, setBlameLines] = useState<Array<{
     lineNumber: number;
     sha: string;
@@ -856,7 +908,8 @@ function BlameSection({ skillName }: { skillName: string }) {
     setBlameLoading(true);
     setBlameError(null);
     try {
-      const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}/blame`);
+      const params = new URLSearchParams({ runtime });
+      const res = await fetch(`/api/skills/${encodeURIComponent(skillName)}/blame?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setBlameLines(data.lines);

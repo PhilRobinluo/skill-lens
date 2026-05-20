@@ -38,6 +38,11 @@ const SOURCE_COLORS: Record<string, string> = {
   baoyu: "#8b5cf6",
   "plugin-official": "#3b82f6",
   "plugin-community": "#10b981",
+  "codex-user": "#6366f1",
+  "codex-system": "#10b981",
+  "codex-plugin": "#8b5cf6",
+  "codex-agent-shared": "#06b6d4",
+  "codex-project": "#f59e0b",
 };
 
 // Distinct warm/earthy colors for domain hub nodes

@@ -1,6 +1,8 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
 
+import { DATA_DIR } from "./config";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -16,7 +18,6 @@ export interface DraftSave {
 // Constants
 // ---------------------------------------------------------------------------
 
-const DATA_DIR = path.join(process.cwd(), "data");
 const DRAFTS_PATH = path.join(DATA_DIR, "drafts.json");
 const MAX_DRAFTS = 20;
 

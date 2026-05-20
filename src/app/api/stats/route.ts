@@ -3,27 +3,41 @@ import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
 import { filterByScope } from "@/lib/utils";
 import type { DashboardStats } from "@/lib/types";
+import { codexReportToSkillEntries, scanCodexSkills } from "@/lib/codex-scanner";
 
 const SOURCE_LABELS: Record<string, string> = {
   "self-built": "自建",
   baoyu: "宝玉系列",
   "plugin-official": "官方插件",
   "plugin-community": "社区插件",
+  "codex-user": "Codex 自建",
+  "codex-system": "Codex 系统",
+  "codex-plugin": "Codex 插件",
+  "codex-agent-shared": "Agents 共享",
+  "codex-project": "Codex 项目",
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  await ensureInitialized();
-
   try {
-    const registry = await readRegistry();
     const url = new URL(request.url);
     const scope = url.searchParams.get("scope");
-    const skills = filterByScope(Object.values(registry.skills), scope);
+    const runtime = url.searchParams.get("runtime") ?? "claude";
+    let skills;
 
-    // Count routed skills (those with at least one CLAUDE.md ref)
-    const routedSkills = skills.filter(
-      (s) => s.claudeMdRefs.length > 0,
-    ).length;
+    if (runtime === "codex") {
+      const report = await scanCodexSkills();
+      skills = filterByScope(codexReportToSkillEntries(report), scope);
+    } else {
+      await ensureInitialized();
+      const registry = await readRegistry();
+      skills = filterByScope(Object.values(registry.skills), scope);
+    }
+
+    // Claude mode counts CLAUDE.md refs. Codex mode treats described skills
+    // as visible because Codex loads skill descriptions directly.
+    const routedSkills = runtime === "codex"
+      ? skills.filter((s) => s.enabled && s.description.trim().length > 0).length
+      : skills.filter((s) => s.claudeMdRefs.length > 0).length;
 
     const disabledSkills = skills.filter((s) => !s.enabled).length;
 

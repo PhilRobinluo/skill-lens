@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TableFilterBuilder } from "./table-filter-builder";
-import type { FilterState, SkillEntry } from "@/lib/types";
+import type { FilterState, FilterableField, SkillEntry } from "@/lib/types";
 
 const COLUMN_LABELS: Record<string, string> = {
   name: "名称",
@@ -58,6 +58,7 @@ interface TableToolbarProps {
   onTagManagerOpen?: () => void;
   onRescan?: () => void;
   rescanning?: boolean;
+  filterValueOptions?: Partial<Record<FilterableField, Array<{ value: string; label: string }>>>;
 }
 
 export function TableToolbar({
@@ -71,6 +72,7 @@ export function TableToolbar({
   onTagManagerOpen,
   onRescan,
   rescanning,
+  filterValueOptions,
 }: TableToolbarProps) {
   return (
     <div className="flex items-center gap-2">
@@ -86,6 +88,7 @@ export function TableToolbar({
       <TableFilterBuilder
         filterState={filterState}
         onChange={onFilterStateChange}
+        valueOptions={filterValueOptions}
       />
 
       {/* Grouping */}

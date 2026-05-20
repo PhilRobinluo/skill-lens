@@ -1,8 +1,7 @@
 import path from "node:path";
 import fsp from "node:fs/promises";
 import { NextResponse } from "next/server";
-import { ensureInitialized } from "@/lib/init-server";
-import { readRegistry } from "@/lib/registry";
+import { decodeSkillName, resolveSkillFromRequest } from "@/lib/skill-resolver";
 import type { FileNode } from "@/lib/types";
 
 async function buildFileTree(dirPath: string, basePath: string, depth = 0): Promise<FileNode[]> {
@@ -46,19 +45,13 @@ async function buildFileTree(dirPath: string, basePath: string, depth = 0): Prom
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ name: string }> },
 ): Promise<NextResponse> {
-  await ensureInitialized();
-
   try {
     const { name } = await params;
-    const decodedName = decodeURIComponent(name);
-    const registry = await readRegistry();
-
-    const skill =
-      registry.skills[decodedName] ??
-      Object.values(registry.skills).find((entry) => entry.name === decodedName);
+    const decodedName = decodeSkillName(name);
+    const skill = await resolveSkillFromRequest(request, name);
 
     if (!skill) {
       return NextResponse.json(

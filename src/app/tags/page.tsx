@@ -62,12 +62,17 @@ const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> 
     label: "社区插件",
     className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
   },
+  "codex-user": { label: "Codex 自建", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  "codex-system": { label: "Codex 系统", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  "codex-plugin": { label: "Codex 插件", className: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300" },
+  "codex-agent-shared": { label: "Agents 共享", className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  "codex-project": { label: "Codex 项目", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
 };
 
 // ── Main Component ──
 
 export default function TagsPage() {
-  const { scopeParam } = useScope();
+  const { runtime, scopeParam } = useScope();
   const [tags, setTags] = useState<TagInfo[]>([]);
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -335,22 +340,15 @@ export default function TagsPage() {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">标签系统</h1>
+          <h1 className="text-2xl font-bold tracking-tight">标签系统 · {runtime === "codex" ? "Codex" : "Claude"}</h1>
           <p className="text-sm text-muted-foreground">
-            标签分类与批量操作 — 给技能打标签，整理未标记项，合并重复标签
+            {runtime === "codex"
+              ? "Codex 模式当前先做只读标签视图，避免误写真实 skill"
+              : "标签分类与批量操作 — 给技能打标签，整理未标记项，合并重复标签"}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setAiTagOpen(true)}
-            disabled={!settingsStatus?.hasApiKey}
-          >
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            AI 打标签
-          </Button>
-          <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+          <Button size="sm" onClick={() => setCreateDialogOpen(true)} disabled={runtime === "codex"}>
             + 新建标签
           </Button>
         </div>
@@ -462,8 +460,18 @@ export default function TagsPage() {
                     <Badge variant="secondary" className="text-xs">
                       {rightPanelCount} 个技能
                     </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-3 h-8"
+                      onClick={() => setAiTagOpen(true)}
+                      disabled={runtime === "codex" || !settingsStatus?.hasApiKey}
+                    >
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      AI 打标签
+                    </Button>
                   </div>
-                  {!isUntaggedSelected && (
+                  {!isUntaggedSelected && runtime !== "codex" && (
                     <Button
                       variant={editMode ? "default" : "outline"}
                       size="sm"

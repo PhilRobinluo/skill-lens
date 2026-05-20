@@ -47,7 +47,8 @@ export function filterByScope(skills: SkillEntry[], scope: string | null): Skill
  * "plugin-community/brainstorming", but the UI should show just "deploy".
  */
 export function skillDisplayName(name: string): string {
-  return name.replace(/^(?:plugin-official|plugin-community)\//, "");
+  return name.replace(/^(?:plugin-official|plugin-community|codex-user|codex-system|codex-agent-shared|codex-project)\//, "")
+    .replace(/^codex-plugin\/[^/]+\//, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ export function cleanDescriptionSummary(raw: string): string {
   if (!summaryLine) return lines[0] || "无描述";
 
   // Clean up the line: strip leading【】brackets, markdown bold
-  let clean = summaryLine
+  const clean = summaryLine
     .replace(/^\*\*(.+?)\*\*[：:\s]*/, "$1：") // **强制规则**: → 强制规则：
     .replace(/^#+\s*/, ""); // # Heading → Heading
 

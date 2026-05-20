@@ -1,26 +1,26 @@
 import { NextResponse } from "next/server";
-import { ensureInitialized } from "@/lib/init-server";
-import { readRegistry } from "@/lib/registry";
-import type { SkillGitHistory } from "@/lib/types";
-
-const EMPTY_HISTORY: SkillGitHistory = {
-  totalCommits: 0, createdAt: "", lastCommitAt: "",
-  hasUncommittedChanges: false, contributors: [], timeline: [],
-};
+import {
+  EMPTY_SKILL_HISTORY,
+  decodeSkillName,
+  getHistoryForSkillPath,
+  resolveSkillFromRequest,
+} from "@/lib/skill-resolver";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ name: string }> },
 ): Promise<NextResponse> {
-  await ensureInitialized();
   const { name } = await params;
-  const decodedName = decodeURIComponent(name);
+  const decodedName = decodeSkillName(name);
   try {
-    const registry = await readRegistry();
-    const skill = registry.skills[decodedName];
+    const skill = await resolveSkillFromRequest(request, name);
     if (!skill) return NextResponse.json({ error: "Skill not found" }, { status: 404 });
-    return NextResponse.json(skill.gitHistory ?? EMPTY_HISTORY);
+    const history = skill.gitHistory ?? await getHistoryForSkillPath(skill.path);
+    return NextResponse.json(history ?? EMPTY_SKILL_HISTORY);
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json(
+      { error: String(err), name: decodedName },
+      { status: 500 },
+    );
   }
 }

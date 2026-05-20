@@ -1,10 +1,8 @@
 import { promisify } from "node:util";
 import { execFile as execFileCb } from "node:child_process";
 import path from "node:path";
-import os from "node:os";
 import { NextResponse } from "next/server";
-import { ensureInitialized } from "@/lib/init-server";
-import { readRegistry } from "@/lib/registry";
+import { getSkillGitLocation, resolveSkillFromRequest } from "@/lib/skill-resolver";
 
 const execFile = promisify(execFileCb);
 
@@ -20,26 +18,12 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ name: string }> },
 ): Promise<NextResponse> {
-  await ensureInitialized();
-
   try {
     const { name } = await params;
-    const decodedName = decodeURIComponent(name);
-    const registry = await readRegistry();
-
-    const skill =
-      registry.skills[decodedName] ??
-      Object.values(registry.skills).find((entry) => entry.name === decodedName);
+    const skill = await resolveSkillFromRequest(request, name);
 
     if (!skill) {
       return NextResponse.json({ error: "Skill not found" }, { status: 404 });
-    }
-
-    const claudeDir = path.join(os.homedir(), ".claude");
-
-    // Only works for skills inside ~/.claude
-    if (!skill.path.startsWith(claudeDir)) {
-      return NextResponse.json({ error: "Blame only available for skills under ~/.claude" }, { status: 400 });
     }
 
     // Parse ?file= query param, default to SKILL.md
@@ -53,13 +37,15 @@ export async function GET(
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Get relative path from git root (~/.claude)
-    const relativeToGit = path.relative(claudeDir, filePath);
+    const gitLocation = await getSkillGitLocation(filePath);
+    if (!gitLocation) {
+      return NextResponse.json({ error: "Blame only available for files inside a git repository" }, { status: 400 });
+    }
 
     const { stdout } = await execFile(
       "git",
-      ["blame", "--porcelain", relativeToGit],
-      { cwd: claudeDir, maxBuffer: 5 * 1024 * 1024 },
+      ["blame", "--porcelain", gitLocation.relativePath],
+      { cwd: gitLocation.gitRoot, maxBuffer: 5 * 1024 * 1024 },
     );
 
     const lines = stdout.split("\n");

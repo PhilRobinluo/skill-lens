@@ -35,5 +35,39 @@ export const PROJECT_SCAN_ROOTS: string[] = process.env.PROJECT_SCAN_ROOTS
 /** Whether to run in demo mode (skip real scanning, use sample data) */
 export const DEMO_MODE: boolean = process.env.DEMO === "1";
 
-/** Data directory for registry and cache files */
-export const DATA_DIR: string = path.join(process.cwd(), "data");
+/** Bundled read-only data shipped with the app, such as demo fixtures. */
+export const BUNDLED_DATA_DIR: string = path.join(process.cwd(), "data");
+
+function defaultRuntimeDataDir(): string {
+  if (process.env.NODE_ENV === "test") {
+    return BUNDLED_DATA_DIR;
+  }
+
+  if (process.platform === "darwin") {
+    return path.join(home, "Library", "Application Support", "Skill Lens", "data");
+  }
+
+  if (process.platform === "win32") {
+    return path.join(
+      process.env.APPDATA ?? path.join(home, "AppData", "Roaming"),
+      "Skill Lens",
+      "data",
+    );
+  }
+
+  return path.join(
+    process.env.XDG_DATA_HOME ?? path.join(home, ".local", "share"),
+    "skill-lens",
+    "data",
+  );
+}
+
+/**
+ * Runtime data directory for user-specific state.
+ *
+ * User-specific settings and scanned registries should not live inside the
+ * repository, even when ignored by git. Keeping the default under the OS app
+ * data directory prevents accidental commits, screenshots, or packaged leaks.
+ */
+export const DATA_DIR: string =
+  process.env.SKILL_LENS_DATA_DIR ?? defaultRuntimeDataDir();

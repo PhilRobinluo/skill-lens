@@ -94,7 +94,16 @@
       "electron/**/*",
       "resources/**/*",
       "src/**/*",
-      "data/**/*"
+      "data/demo-registry.json",
+      "!data/settings.json",
+      "!data/skills-registry.json",
+      "!data/drafts.json",
+      "!data/skill-frequency-cache.json",
+      "!data/claude-md-version-tags.json",
+      "!data/ai-flow-snapshots.json",
+      "!data/claude-md-notes.json",
+      "!data/claude-md-profiles/**",
+      "!data/*.tmp"
     ]
   }
 }

@@ -1,17 +1,24 @@
 import { NextResponse } from "next/server";
 import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry, writeRegistry } from "@/lib/registry";
+import { codexReportToSkillEntries, scanCodexSkills } from "@/lib/codex-scanner";
 
 /** GET /api/tags — list all unique domain tags with skill counts */
 export async function GET(request: Request): Promise<NextResponse> {
-  await ensureInitialized();
-
-  const registry = await readRegistry();
   const url = new URL(request.url);
   const scope = url.searchParams.get("scope");
+  const runtime = url.searchParams.get("runtime") ?? "claude";
 
   const { filterByScope } = await import("@/lib/utils");
-  const scopedSkills = filterByScope(Object.values(registry.skills), scope);
+  const report = runtime === "codex" ? await scanCodexSkills() : null;
+  if (runtime !== "codex") await ensureInitialized();
+  const registry = runtime === "codex" ? null : await readRegistry();
+  const scopedSkills = filterByScope(
+    runtime === "codex" && report
+      ? codexReportToSkillEntries(report)
+      : Object.values(registry!.skills),
+    scope,
+  );
   const tagMap = new Map<string, number>();
 
   for (const skill of scopedSkills) {
@@ -20,10 +27,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
   }
 
-  // Include custom tags (count = 0 if not used by any skill)
-  for (const ct of registry.meta.customTags ?? []) {
-    if (!tagMap.has(ct)) {
-      tagMap.set(ct, 0);
+  if (registry) {
+    // Include custom tags (count = 0 if not used by any skill)
+    for (const ct of registry.meta.customTags ?? []) {
+      if (!tagMap.has(ct)) {
+        tagMap.set(ct, 0);
+      }
     }
   }
 
