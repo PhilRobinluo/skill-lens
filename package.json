@@ -1,7 +1,7 @@
 {
   "name": "skill-lens",
   "version": "3.0.0",
-  "main": "electron/main.mjs",
+  "main": "electron/main.cjs",
   "description": "Visual dashboard for Claude Code Skills — scan, browse, tag, and orchestrate your skill library",
   "author": "Skill Lens Team",
   "license": "MIT",
@@ -25,6 +25,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "electron:dev": "concurrently -k \"next dev -p 3939\" \"wait-on http://localhost:3939 && electron electron/main.mjs\"",
+    "electron:build:dir": "next build && electron-builder --dir",
     "electron:build": "next build && electron-builder",
     "electron:start": "electron electron/main.mjs"
   },
@@ -74,6 +75,7 @@
     "appId": "com.skill-lens.app",
     "productName": "Skill Lens",
     "asar": false,
+    "afterPack": "scripts/after-pack.cjs",
     "publish": {
       "provider": "github",
       "owner": "PhilRobinluo",
@@ -81,6 +83,9 @@
     },
     "mac": {
       "category": "public.app-category.developer-tools",
+      "extendInfo": {
+        "LSUIElement": true
+      },
       "icon": "public/logo-v6-dock.png",
       "target": [
         "dmg"
@@ -88,6 +93,7 @@
     },
     "files": [
       ".next/**/*",
+      "!.next/dev/**/*",
       "node_modules/**/*",
       "public/**/*",
       "package.json",

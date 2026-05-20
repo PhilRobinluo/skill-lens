@@ -13,12 +13,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url);
   const sha = url.searchParams.get("sha");
   const projectPath = url.searchParams.get("project");
+  const runtime = url.searchParams.get("runtime");
 
   if (!sha || !/^[0-9a-f]{4,40}$/i.test(sha)) {
     return NextResponse.json({ error: "Invalid or missing ?sha= parameter" }, { status: 400 });
   }
 
-  const { gitCwd, relativePath } = resolveClaudeMdPaths(projectPath);
+  const { gitCwd, relativePath } = resolveClaudeMdPaths(projectPath, runtime);
 
   try {
     const { stdout } = await execFile(
