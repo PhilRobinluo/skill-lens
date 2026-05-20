@@ -8,7 +8,8 @@ const execFile = promisify(execFileCb);
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url);
   const projectPath = url.searchParams.get("project");
-  const { gitCwd, relativePath } = resolveClaudeMdPaths(projectPath);
+  const runtime = url.searchParams.get("runtime");
+  const { gitCwd, relativePath } = resolveClaudeMdPaths(projectPath, runtime);
 
   try {
     const { stdout: statusOutput } = await execFile(

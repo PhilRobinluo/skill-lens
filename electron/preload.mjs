@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   isElectron: true,
   openMainWindow: () => ipcRenderer.invoke("open-main-window"),
   copyToClipboard: (text) => ipcRenderer.invoke("copy-to-clipboard", text),
+  setTrayExpanded: (expanded) => ipcRenderer.invoke("set-tray-expanded", expanded),
 });

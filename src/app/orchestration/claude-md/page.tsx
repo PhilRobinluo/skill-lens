@@ -21,7 +21,6 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useScope } from "@/contexts/scope-context";
 import type { ProjectInfo } from "@/lib/types";
-import { CodexLens } from "@/app/codex/page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -239,7 +238,7 @@ function buildTocFromContent(content: string): TocItem[] {
   return items;
 }
 
-function buildFlowElements(routeTables: ParsedRoute[]): { nodes: Node[]; edges: Edge[] } {
+function buildFlowElements(routeTables: ParsedRoute[], rootLabel = "CLAUDE.md"): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
@@ -301,7 +300,7 @@ function buildFlowElements(routeTables: ParsedRoute[]): { nodes: Node[]; edges: 
   nodes.push({
     id: "root",
     type: "rootNode",
-    data: { label: "CLAUDE.md", count: routeTables.length },
+    data: { label: rootLabel, count: routeTables.length },
     position: { x: 0, y: totalHeight / 2 },
   });
 
@@ -379,10 +378,12 @@ function buildAiFlowElements(data: AiFlowData): { nodes: Node[]; edges: Edge[] }
 
 export default function ClaudeMdPage() {
   const { runtime, scope, projectPath: scopeProjectPath } = useScope();
+  const ruleFileName = runtime === "codex" ? "AGENTS.md" : "CLAUDE.md";
+  const globalRuleLabel = `全局 ${ruleFileName}`;
 
   // File list for multi-file mode
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
-  // null = global CLAUDE.md, string = project path
+  // null = global rule file, string = project path
   const [activeFile, setActiveFile] = useState<string | null>(null);
 
   // Data states
@@ -439,44 +440,70 @@ export default function ClaudeMdPage() {
   const lineRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const renderedDocRef = useRef<HTMLDivElement>(null);
 
+  const activeRuleQuery = useMemo(() => {
+    const params = new URLSearchParams({ runtime });
+    if (activeFile) params.set("project", activeFile);
+    return params.toString();
+  }, [runtime, activeFile]);
+
+  const buildRuleQuery = useCallback((extra: Record<string, string> = {}) => {
+    const params = new URLSearchParams(activeRuleQuery);
+    for (const [key, value] of Object.entries(extra)) {
+      params.set(key, value);
+    }
+    return params.toString();
+  }, [activeRuleQuery]);
+
   // Fetch projects list
   useEffect(() => {
-    fetch("/api/projects")
+    fetch(`/api/projects?runtime=${runtime}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.projects) setProjects(data.projects); })
       .catch(() => {});
-  }, []);
+  }, [runtime]);
 
   // Sync activeFile with scope changes
   useEffect(() => {
     if (scope === "global") {
       setActiveFile(null);
     } else if (scope.startsWith("project:") || scope.startsWith("combined:")) {
-      // Project scope: default to project-level CLAUDE.md (not global)
+      // Project scope: default to project-level runtime rule file (not global)
       setActiveFile(scopeProjectPath);
     } else if (scope === "all") {
-      // All scope: default to global CLAUDE.md
+      // All scope: default to global runtime rule file
       setActiveFile(null);
     }
   }, [scope, scopeProjectPath]);
 
-  // Build the project param for API calls
-  const projectParam = activeFile ? `project=${encodeURIComponent(activeFile)}` : "";
-
   // --- Data fetching ---
   const fetchAll = useCallback(async () => {
-    const pp = activeFile ? `?project=${encodeURIComponent(activeFile)}` : "";
+    const ruleQuery = buildRuleQuery();
     try {
-      const [blameRes, historyRes, statusRes, notesRes] = await Promise.all([
-        fetch(`/api/claude-md/blame${pp}`),
-        fetch(`/api/claude-md/history${pp}`),
-        fetch(`/api/claude-md/status${pp}`),
+      const [docRes, blameRes, historyRes, statusRes, notesRes] = await Promise.all([
+        fetch(`/api/claude-md?${ruleQuery}`),
+        fetch(`/api/claude-md/blame?${ruleQuery}`),
+        fetch(`/api/claude-md/history?${ruleQuery}`),
+        fetch(`/api/claude-md/status?${ruleQuery}`),
         fetch("/api/claude-md/notes"),
       ]);
 
+      let fallbackLines: BlameLine[] | null = null;
+      if (docRes.ok) {
+        const data = await docRes.json();
+        const content = String(data.content ?? "");
+        fallbackLines = content.split("\n").map((line, index) => ({
+          lineNumber: index + 1,
+          sha: "working",
+          author: ruleFileName,
+          date: new Date().toISOString(),
+          content: line,
+        }));
+      }
       if (blameRes.ok) {
         const data = await blameRes.json();
-        setBlameLines(data.lines);
+        setBlameLines(data.lines ?? fallbackLines ?? []);
+      } else {
+        setBlameLines(fallbackLines ?? []);
       }
       if (historyRes.ok) {
         const data = await historyRes.json();
@@ -495,7 +522,7 @@ export default function ClaudeMdPage() {
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
-  }, [activeFile]);
+  }, [buildRuleQuery, ruleFileName]);
 
   useEffect(() => {
     setLoading(true);
@@ -520,7 +547,7 @@ export default function ClaudeMdPage() {
     }
     setLoadingVersion(true);
     try {
-      const res = await fetch(`/api/claude-md/version?sha=${sha}${projectParam ? `&${projectParam}` : ""}`);
+      const res = await fetch(`/api/claude-md/version?${buildRuleQuery({ sha })}`);
       if (res.ok) {
         const data = await res.json();
         setSelectedVersionContent(data.content);
@@ -568,8 +595,8 @@ export default function ClaudeMdPage() {
   const toc = useMemo(() => buildTocFromContent(activeContent), [activeContent]);
   const routeTables = useMemo(() => parseRouteTables(activeContent), [activeContent]);
   const { nodes: parsedFlowNodes, edges: parsedFlowEdges } = useMemo(
-    () => buildFlowElements(routeTables),
-    [routeTables],
+    () => buildFlowElements(routeTables, ruleFileName),
+    [routeTables, ruleFileName],
   );
   const { nodes: aiFlowNodes, edges: aiFlowEdges } = useMemo(
     () => (aiFlowData ? buildAiFlowElements(aiFlowData) : { nodes: [], edges: [] }),
@@ -601,7 +628,7 @@ export default function ClaudeMdPage() {
     }
     setLoadingDiffs((prev) => ({ ...prev, [sha]: true }));
     try {
-      const res = await fetch(`/api/claude-md/diff?sha=${sha}${projectParam ? `&${projectParam}` : ""}`);
+      const res = await fetch(`/api/claude-md/diff?${buildRuleQuery({ sha })}`);
       if (res.ok) {
         const data = await res.json();
         setExpandedDiffs((prev) => ({ ...prev, [sha]: data.diff }));
@@ -612,7 +639,8 @@ export default function ClaudeMdPage() {
   }
 
   function copyCommitCommand() {
-    const cmd = `cd ~/.claude && git add CLAUDE.md && git commit -m "update: CLAUDE.md"`;
+    const dir = activeFile ?? (runtime === "codex" ? "~/.codex" : "~/.claude");
+    const cmd = `cd ${activeFile ? `"${dir}"` : dir} && git add ${ruleFileName} && git commit -m "update: ${ruleFileName}"`;
     navigator.clipboard.writeText(cmd).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -659,11 +687,11 @@ export default function ClaudeMdPage() {
   }
 
   async function restoreVersion(sha: string) {
-    if (!confirm("确定要将 CLAUDE.md 恢复到这个版本吗？当前内容会被覆盖。")) return;
+    if (!confirm(`确定要将 ${ruleFileName} 恢复到这个版本吗？当前内容会被覆盖。`)) return;
     const res = await fetch("/api/claude-md/restore", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sha }),
+      body: JSON.stringify({ sha, runtime, project: activeFile }),
     });
     if (res.ok) {
       await fetchAll();
@@ -707,21 +735,11 @@ export default function ClaudeMdPage() {
     ),
   }), []);
 
-  if (runtime === "codex") {
-    return (
-      <CodexLens
-        title="AGENTS.md"
-        subtitle="Codex 规则入口和 skill 事实源：全局 AGENTS.md、Codex skills、插件缓存和项目级配置"
-        variant="rules"
-      />
-    );
-  }
-
   // --- Loading state ---
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">加载 CLAUDE.md 数据...</p>
+        <p className="text-muted-foreground">加载 {ruleFileName} 数据...</p>
       </div>
     );
   }
@@ -743,17 +761,17 @@ export default function ClaudeMdPage() {
 
             if (scope === "all") {
               // All scope: show global + all projects
-              files.push({ label: "全局 CLAUDE.md", projectPath: null, hasMd: true });
-              for (const p of projects.filter(pr => pr.hasClaudeMd)) {
-                files.push({ label: `${p.name}/CLAUDE.md`, projectPath: p.path, hasMd: true });
+              files.push({ label: globalRuleLabel, projectPath: null, hasMd: true });
+              for (const p of projects.filter(pr => runtime === "codex" ? pr.hasAgentsMd : pr.hasClaudeMd)) {
+                files.push({ label: `${p.name}/${ruleFileName}`, projectPath: p.path, hasMd: true });
               }
             } else if (scope.startsWith("project:") || scope.startsWith("combined:")) {
-              // Project scope: show project CLAUDE.md + global for easy switching
+              // Project scope: show project rule file + global for easy switching
               const proj = projects.find(p => p.path === scopeProjectPath);
-              if (proj?.hasClaudeMd) {
-                files.push({ label: `${proj.name}/CLAUDE.md`, projectPath: proj.path, hasMd: true });
+              if (proj && (runtime === "codex" ? proj.hasAgentsMd : proj.hasClaudeMd)) {
+                files.push({ label: `${proj.name}/${ruleFileName}`, projectPath: proj.path, hasMd: true });
               }
-              files.push({ label: "全局 CLAUDE.md", projectPath: null, hasMd: true });
+              files.push({ label: globalRuleLabel, projectPath: null, hasMd: true });
             }
 
             if (files.length < 2) return null;
@@ -975,7 +993,7 @@ export default function ClaudeMdPage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              CLAUDE.md
+              {ruleFileName}
               {selectedCommit && (
                 <span className="ml-3 text-sm font-normal text-muted-foreground">
                   版本 {selectedCommit.sha} · {new Date(selectedCommit.date).toLocaleDateString("zh-CN")}
@@ -1256,7 +1274,7 @@ export default function ClaudeMdPage() {
                 <div>
                   <CardTitle className="text-base">软编排分析</CardTitle>
                   <CardDescription>
-                    {flowSource === "parsed" && "代码解析 CLAUDE.md 路由结构"}
+                    {flowSource === "parsed" && `代码解析 ${ruleFileName} 路由结构`}
                     {flowSource === "ai" && "AI 生成的编排分析"}
                     {flowSource === "snapshot" && "快照回放"}
                     {selectedVersion && <> · 版本 {selectedVersion}</>}
