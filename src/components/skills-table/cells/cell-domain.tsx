@@ -14,9 +14,10 @@ interface CellDomainProps {
   skill: SkillEntry;
   allDomains?: string[];
   onChange: (domains: string[]) => void;
+  readOnly?: boolean;
 }
 
-export function CellDomain({ skill, allDomains, onChange }: CellDomainProps) {
+export function CellDomain({ skill, allDomains, onChange, readOnly = false }: CellDomainProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const domains = skill.tags.domain;
@@ -42,11 +43,28 @@ export function CellDomain({ skill, allDomains, onChange }: CellDomainProps) {
     ? allSuggestions.filter((s) => s.includes(input) && !domains.includes(s))
     : allSuggestions.filter((s) => !domains.includes(s));
 
+  if (readOnly) {
+    return (
+      <div className="flex min-h-[24px] flex-wrap gap-1 px-1 py-0.5">
+        {domains.length > 0 ? (
+          domains.map((d) => (
+            <Badge key={d} variant="secondary" className="text-[10px]">
+              {d}
+            </Badge>
+          ))
+        ) : (
+          <span className="text-xs text-muted-foreground">未标记</span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
+          disabled={readOnly}
           className="flex min-h-[24px] flex-wrap gap-1 rounded px-1 py-0.5 text-left hover:bg-accent/50"
         >
           {domains.length > 0 ? (

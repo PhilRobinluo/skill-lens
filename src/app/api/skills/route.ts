@@ -4,27 +4,36 @@ import { ensureInitialized } from "@/lib/init-server";
 import { readRegistry } from "@/lib/registry";
 import { filterByScope } from "@/lib/utils";
 import type { SkillEntry } from "@/lib/types";
+import { codexReportToSkillEntries, scanCodexSkills } from "@/lib/codex-scanner";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  await ensureInitialized();
-
   try {
-    const registry = await readRegistry();
     const url = new URL(request.url);
 
     // Extract filter params
     const scope = url.searchParams.get("scope");
+    const runtime = url.searchParams.get("runtime") ?? "claude";
     const domain = url.searchParams.get("domain");
     const source = url.searchParams.get("source");
     const frequency = url.searchParams.get("frequency");
     const q = url.searchParams.get("q")?.toLowerCase();
 
-    // Filter out skills whose directories no longer exist on disk
-    // then apply scope filter
-    let skills = filterByScope(
-      Object.values(registry.skills).filter((s) => fs.existsSync(s.path)),
-      scope,
-    );
+    let skills: SkillEntry[];
+    if (runtime === "codex") {
+      const report = await scanCodexSkills();
+      skills = filterByScope(codexReportToSkillEntries(report), scope);
+    } else {
+      await ensureInitialized();
+      const registry = await readRegistry();
+      // Filter out skills whose directories no longer exist on disk
+      // (skip check for remote skills — their paths are not local)
+      skills = filterByScope(
+        Object.values(registry.skills).filter(
+          (s) => fs.existsSync(s.path),
+        ),
+        scope,
+      );
+    }
 
     // Apply filters
     if (domain) {

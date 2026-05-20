@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Search, Copy, Check, ChevronRight, ChevronDown, ExternalLink, Power } from "lucide-react";
+import type { SkillEntry } from "@/lib/types";
 
 interface SkillItem {
   name: string;
@@ -15,6 +16,28 @@ interface TagGroup {
   skills: SkillItem[];
   expanded: boolean;
 }
+
+interface TagSummary {
+  name: string;
+  count: number;
+}
+
+interface SkillsResponse {
+  skills?: SkillEntry[];
+}
+
+interface TagsResponse {
+  tags?: TagSummary[];
+}
+
+interface ElectronBridge {
+  copyToClipboard: (text: string) => Promise<void>;
+  openMainWindow: () => Promise<void>;
+}
+
+type WindowWithElectron = Window & {
+  electronAPI?: ElectronBridge;
+};
 
 export default function TrayPage() {
   const [skills, setSkills] = useState<SkillItem[]>([]);
@@ -42,10 +65,10 @@ export default function TrayPage() {
         fetch("/api/skills"),
         fetch("/api/tags"),
       ]);
-      const skillsData = await skillsRes.json();
-      const tagsData = await tagsRes.json();
+      const skillsData = (await skillsRes.json()) as SkillsResponse;
+      const tagsData = (await tagsRes.json()) as TagsResponse;
 
-      const skillList: SkillItem[] = (skillsData.skills || []).map((s: any) => ({
+      const skillList: SkillItem[] = (skillsData.skills || []).map((s) => ({
         name: s.name,
         description: s.description || "",
         enabled: s.enabled,
@@ -56,8 +79,8 @@ export default function TrayPage() {
 
       // Build tag groups
       const tagNames: string[] = (tagsData.tags || [])
-        .filter((t: any) => t.count > 0)
-        .map((t: any) => t.name);
+        .filter((t) => t.count > 0)
+        .map((t) => t.name);
 
       const groups: TagGroup[] = tagNames.map((tagName) => ({
         name: tagName,
@@ -124,8 +147,9 @@ export default function TrayPage() {
   // Copy skill name
   const copyName = async (name: string) => {
     try {
-      if (typeof window !== "undefined" && (window as any).electronAPI) {
-        await (window as any).electronAPI.copyToClipboard(name);
+      const electronAPI = (window as WindowWithElectron).electronAPI;
+      if (electronAPI) {
+        await electronAPI.copyToClipboard(name);
       } else {
         await navigator.clipboard.writeText(name);
       }
@@ -138,8 +162,9 @@ export default function TrayPage() {
 
   // Open main window
   const openMainWindow = () => {
-    if (typeof window !== "undefined" && (window as any).electronAPI) {
-      (window as any).electronAPI.openMainWindow();
+    const electronAPI = (window as WindowWithElectron).electronAPI;
+    if (electronAPI) {
+      electronAPI.openMainWindow();
     } else {
       window.open("/", "_blank");
     }

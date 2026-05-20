@@ -11,8 +11,6 @@ import {
   CLAUDE_MD_PATH,
 } from "./config";
 import { discoverProjects } from "./project-discovery";
-import { readSettings } from "./settings";
-import { scanRemoteOpenClawSkills } from "./openclaw-remote";
 
 // ---------------------------------------------------------------------------
 // parseSkillMd — extract description from SKILL.md content
@@ -360,17 +358,6 @@ export async function scanAll(
   // Scan project-level skills
   const projectSkills = await scanProjectSkills();
   Object.assign(skills, projectSkills);
-
-  // Scan remote OpenClaw skills via SSH (if enabled)
-  try {
-    const settings = await readSettings();
-    if (settings.openClawSsh?.enabled && settings.openClawSsh.host) {
-      const remoteSkills = scanRemoteOpenClawSkills(settings.openClawSsh);
-      Object.assign(skills, remoteSkills);
-    }
-  } catch {
-    // Remote scanning failed — continue with local skills only
-  }
 
   // Parse global CLAUDE.md for routing-table references
   let claudeMdRefs: Record<string, Array<{ table: string; trigger: string }>> =

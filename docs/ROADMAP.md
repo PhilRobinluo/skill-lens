@@ -22,39 +22,38 @@
 - 实现亮/暗双主题切换（shadcn/ui + Tailwind `dark:` 前缀）
 - 跟随系统偏好 + 手动切换按钮
 
-### P4: OpenClaw Skill 监控
+### P4: Codex Skill Lens
 
-- 将 Skill Lens 扩展为同时支持 Claude Code 和 OpenClaw 的 Skill 管理工具
-- 兼容性评估结论：**高度兼容，可在同一项目内实现**（详见下方评估）
-- 实现方式：新增 OpenClaw 扫描源，复用现有 UI/注册表/标签系统
+- 将 Skill Lens 扩展为同时支持 Claude Code 和 Codex 的 Skill 管理工具
+- 运行时切换后，同一套总览、浏览、标签和详情视图自动适配 Claude/Codex
+- Codex 模式以 `AGENTS.md`、`~/.codex/skills`、插件缓存和项目级 skills 为核心事实源
 
 ---
 
-## OpenClaw 兼容性评估
+## Codex 兼容性评估
 
 **结论：在现有项目内扩展，不需要另起项目。**
 
 两个工具的 Skill 体系高度相似：
 
-| 对比维度 | Claude Code | OpenClaw |
+| 对比维度 | Claude Code | Codex |
 |---------|------------|----------|
-| Skill 格式 | `SKILL.md`（Markdown） | `SKILL.md`（YAML frontmatter + Markdown） |
-| 全局 Skill 目录 | `~/.claude/skills/` | `~/.openclaw/skills/` |
-| 项目级 Skill | `.claude/skills/` | `<workspace>/skills/` |
-| 插件/社区 Skill | `~/.claude/plugins/cache/` | ClawHub 注册表 + bundled skills |
-| 全局指令文件 | `~/.claude/CLAUDE.md` | `SOUL.md`（核心人格 + 规则） |
-| 项目指令文件 | `./CLAUDE.md` | 项目根目录配置 |
-| 配置文件 | 环境变量 + settings.json | `~/.openclaw/openclaw.json` |
-| 优先级 | 项目 > 全局 | workspace > local > bundled |
+| Skill 格式 | `SKILL.md` | `SKILL.md` |
+| 全局 Skill 目录 | `~/.claude/skills/` | `~/.codex/skills/` |
+| 项目级 Skill | `.claude/skills/` | `.codex/skills/` / `.agents/skills/` |
+| 插件/社区 Skill | `~/.claude/plugins/cache/` | `~/.codex/plugins/cache/` |
+| 全局指令文件 | `~/.claude/CLAUDE.md` | `~/.codex/AGENTS.md` |
+| 项目指令文件 | `./CLAUDE.md` | `./AGENTS.md` |
+| 配置文件 | 环境变量 + settings.json | `~/.codex/config.toml` |
+| 优先级 | 项目 > 全局 | 项目 > 全局 > 插件/系统 |
 
-**实现难度：低（约 2-3 天工作量）**
+**实现难度：中低**
 
 需要改动的点：
-1. `config.ts` — 新增 `OPENCLAW_SKILL_DIRS` 配置（`~/.openclaw/skills/`）
-2. `scanner.ts` — 新增 OpenClaw 扫描逻辑（目录结构一样，只是路径不同）
-3. `types.ts` — `source` 字段新增 `"openclaw-builtin" | "openclaw-community"` 等值
-4. `claude-md-parser.ts` — 新增 `SOUL.md` 解析（格式类似，路由规则可能不同）
-5. 前端 — 仪表板统计增加 OpenClaw 分类，来源筛选增加选项
+1. `codex-scanner.ts` — 扫描 Codex 全局、自建、系统、插件和项目级 skills
+2. `types.ts` — `source` 字段新增 Codex 来源
+3. `scope-context.tsx` — 将运行时和视图范围拆成两条轴
+4. 前端 — 运行时切换后，所有页面展示对应的规则文件和来源标签
 
 不需要改动的点（直接复用）：
 - 注册表系统（skills-registry.json）

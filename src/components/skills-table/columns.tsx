@@ -9,7 +9,7 @@ import { cleanDescriptionSummary, skillDisplayName } from "@/lib/utils";
 import type { SkillEntry } from "@/lib/types";
 import type { SkillCallStats } from "@/lib/frequency-scanner";
 
-const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> = {
+export const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> = {
   "self-built": {
     label: "自建",
     className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
@@ -26,6 +26,11 @@ const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> 
     label: "社区插件",
     className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
   },
+  "codex-user": { label: "Codex 自建", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" },
+  "codex-system": { label: "Codex 系统", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  "codex-plugin": { label: "Codex 插件", className: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300" },
+  "codex-agent-shared": { label: "Agents 共享", className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  "codex-project": { label: "Codex 项目", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
 };
 
 export interface ColumnCallbacks {
@@ -33,11 +38,13 @@ export interface ColumnCallbacks {
   onDomainChange: (skill: SkillEntry, domains: string[]) => void;
   onToggle: (skill: SkillEntry, enabled: boolean) => void;
   allDomains?: string[];
+  readOnly?: boolean;
 }
 
 /** Table meta — pass dynamic data through table.options.meta instead of closures */
 export interface SkillTableMeta {
   callStatsMap?: Record<string, SkillCallStats>;
+  hasCallStatsSource?: boolean;
 }
 
 /** Format ISO timestamp to relative time string */
@@ -59,6 +66,38 @@ function heatColor(total: number): string {
   return "bg-gray-300 dark:bg-gray-600";
 }
 
+function isCodexSkill(skill: SkillEntry): boolean {
+  return skill.source.startsWith("codex-");
+}
+
+function routeState(skill: SkillEntry): "routed" | "orphan" {
+  if (isCodexSkill(skill)) {
+    return skill.enabled && skill.description.trim().length > 0 ? "routed" : "orphan";
+  }
+  return skill.claudeMdRefs.length > 0 ? "routed" : "orphan";
+}
+
+function activityLevel(skill: SkillEntry): number {
+  const lastActiveAt = skill.gitHistory?.lastCommitAt ?? skill.lastModified;
+  if (!lastActiveAt) return 0;
+  const days = Math.floor((Date.now() - new Date(lastActiveAt).getTime()) / 86400000);
+  if (days <= 7) return 3;
+  if (days <= 30) return 2;
+  if (days <= 90) return 1;
+  return 0;
+}
+
+function activityLabel(skill: SkillEntry): { label: string; title: string } {
+  const lastActiveAt = skill.gitHistory?.lastCommitAt ?? skill.lastModified;
+  if (!lastActiveAt) return { label: "—", title: "没有活跃度数据" };
+  const days = Math.floor((Date.now() - new Date(lastActiveAt).getTime()) / 86400000);
+  const basis = skill.gitHistory?.lastCommitAt ? "最近提交" : "最近修改";
+  if (days <= 7) return { label: "高", title: `${basis}：${days}天前` };
+  if (days <= 30) return { label: "中", title: `${basis}：${days}天前` };
+  if (days <= 90) return { label: "低", title: `${basis}：${days}天前` };
+  return { label: "冷", title: `${basis}：${days}天前` };
+}
+
 export function getColumns(
   callbacks: ColumnCallbacks,
   callStatsMap?: Record<string, SkillCallStats>,
@@ -71,7 +110,7 @@ export function getColumns(
       cell: ({ row }) => (
         <button
           type="button"
-          className={`max-w-[200px] truncate text-left font-mono text-sm hover:underline ${
+          className={`min-w-[260px] max-w-[460px] whitespace-normal break-words text-left font-mono text-sm leading-5 hover:underline ${
             !row.original.enabled ? "line-through opacity-50" : ""
           }`}
           onClick={() => callbacks.onNameClick(row.original)}
@@ -79,6 +118,9 @@ export function getColumns(
           {skillDisplayName(row.original.name)}
         </button>
       ),
+      size: 320,
+      minSize: 260,
+      maxSize: 460,
       enableGrouping: false,
     },
     // 1.5 Enabled toggle
@@ -88,10 +130,21 @@ export function getColumns(
       header: ({ column }) => <TableColumnHeader column={column} title="启用" />,
       cell: ({ row }) => {
         const skill = row.original;
+        if (callbacks.readOnly) {
+          return (
+            <span
+              className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                skill.enabled ? "bg-emerald-500" : "bg-muted-foreground/30"
+              }`}
+              title={skill.enabled ? "已启用" : "已禁用"}
+            />
+          );
+        }
         return (
           <Switch
             size="sm"
             checked={skill.enabled}
+            disabled={callbacks.readOnly}
             onCheckedChange={(checked) => callbacks.onToggle(skill, !!checked)}
           />
         );
@@ -117,16 +170,17 @@ export function getColumns(
     // 3. Status (routed/orphan)
     {
       id: "status",
-      accessorFn: (row) => (row.claudeMdRefs.length > 0 ? "routed" : "orphan"),
+      accessorFn: routeState,
       header: ({ column }) => <TableColumnHeader column={column} title="路由" />,
-      cell: ({ getValue }) => {
+      cell: ({ getValue, row }) => {
         const val = getValue() as string;
+        const codex = isCodexSkill(row.original);
         return (
           <Badge
             variant={val === "routed" ? "default" : "secondary"}
             className="text-[10px]"
           >
-            {val === "routed" ? "已路由" : "孤立"}
+            {val === "routed" ? (codex ? "规则可见" : "已路由") : (codex ? "待规则" : "孤立")}
           </Badge>
         );
       },
@@ -141,6 +195,7 @@ export function getColumns(
         <CellDomain
           skill={row.original}
           allDomains={callbacks.allDomains}
+          readOnly={callbacks.readOnly}
           onChange={(domains) => callbacks.onDomainChange(row.original, domains)}
         />
       ),
@@ -173,6 +228,13 @@ export function getColumns(
       cell: ({ row, table }) => {
         const meta = table.options.meta as SkillTableMeta | undefined;
         const stats = meta?.callStatsMap?.[row.original.name];
+        if (!meta?.hasCallStatsSource) {
+          return (
+            <span className="text-xs text-muted-foreground/50" title="当前没有可解析的 Skill 调用日志。旧实现只扫描 ~/.claude/projects JSONL 里的 Skill 工具调用。">
+              无调用日志
+            </span>
+          );
+        }
         if (!stats || stats.total === 0) {
           return <span className="text-xs text-muted-foreground/50">未使用</span>;
         }
@@ -230,25 +292,18 @@ export function getColumns(
     // 7.7 Activity level
     {
       id: "activity",
-      accessorFn: (row) => {
-        if (!row.gitHistory?.lastCommitAt) return 0;
-        const days = Math.floor((Date.now() - new Date(row.gitHistory.lastCommitAt).getTime()) / 86400000);
-        if (days <= 7) return 3;
-        if (days <= 30) return 2;
-        if (days <= 90) return 1;
-        return 0;
-      },
+      accessorFn: activityLevel,
       header: ({ column }) => <TableColumnHeader column={column} title="活跃度" />,
       cell: ({ row }) => {
-        const history = row.original.gitHistory;
-        if (!history || history.totalCommits === 0) {
+        const activity = activityLabel(row.original);
+        if (activity.label === "—") {
           return <span className="text-xs text-muted-foreground/50">—</span>;
         }
-        const days = Math.floor((Date.now() - new Date(history.lastCommitAt).getTime()) / 86400000);
-        if (days <= 7) return <span title={`${days}天前`}>🔥</span>;
-        if (days <= 30) return <span title={`${days}天前`}>⚡</span>;
-        if (days <= 90) return <span title={`${days}天前`}>💤</span>;
-        return <span title={`${days}天前`}>⚪</span>;
+        return (
+          <Badge variant="outline" className="text-[10px]" title={activity.title}>
+            {activity.label}
+          </Badge>
+        );
       },
     },
     // 8. Created at

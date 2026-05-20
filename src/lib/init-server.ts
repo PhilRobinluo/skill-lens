@@ -3,7 +3,7 @@ import path from "node:path";
 import { scanAll } from "./scanner";
 import { readRegistry, writeRegistry } from "./registry";
 import { startWatcher } from "./watcher";
-import { DEMO_MODE, DATA_DIR } from "./config";
+import { BUNDLED_DATA_DIR, DEMO_MODE, DATA_DIR } from "./config";
 
 // ---------------------------------------------------------------------------
 // Singleton: ensure server is initialized only once
@@ -28,7 +28,7 @@ async function doInit(): Promise<void> {
   try {
     if (DEMO_MODE) {
       console.log("[init] demo mode — loading sample data...");
-      const demoPath = path.join(DATA_DIR, "demo-registry.json");
+      const demoPath = path.join(BUNDLED_DATA_DIR, "demo-registry.json");
       const registryPath = path.join(DATA_DIR, "skills-registry.json");
       if (fs.existsSync(demoPath)) {
         fs.copyFileSync(demoPath, registryPath);

@@ -65,13 +65,7 @@ const OPERATORS_BY_TYPE: Record<string, Array<{ value: FilterOperator; label: st
   ],
 };
 
-const VALUE_OPTIONS: Partial<Record<FilterableField, Array<{ value: string; label: string }>>> = {
-  source: [
-    { value: "self-built", label: "自建" },
-    { value: "baoyu", label: "宝玉系列" },
-    { value: "plugin-official", label: "官方插件" },
-    { value: "plugin-community", label: "社区插件" },
-  ],
+const DEFAULT_VALUE_OPTIONS: Partial<Record<FilterableField, Array<{ value: string; label: string }>>> = {
   status: [
     { value: "routed", label: "已路由" },
     { value: "orphan", label: "孤立" },
@@ -96,7 +90,12 @@ function getFieldValue(skill: SkillEntry, field: FilterableField): string {
   switch (field) {
     case "name": return skill.name;
     case "source": return skill.source;
-    case "status": return skill.claudeMdRefs.length > 0 ? "routed" : "orphan";
+    case "status": {
+      if (skill.source.startsWith("codex-")) {
+        return skill.enabled && skill.description.trim().length > 0 ? "routed" : "orphan";
+      }
+      return skill.claudeMdRefs.length > 0 ? "routed" : "orphan";
+    }
     case "domain": return skill.tags.domain.join(", ");
     case "description": return skill.description;
     case "lineCount": return String(skill.lineCount);
@@ -137,10 +136,12 @@ export function filterSkills(skills: SkillEntry[], state: FilterState): SkillEnt
 interface TableFilterBuilderProps {
   filterState: FilterState;
   onChange: (state: FilterState) => void;
+  valueOptions?: Partial<Record<FilterableField, Array<{ value: string; label: string }>>>;
 }
 
-export function TableFilterBuilder({ filterState, onChange }: TableFilterBuilderProps) {
+export function TableFilterBuilder({ filterState, onChange, valueOptions }: TableFilterBuilderProps) {
   const [open, setOpen] = useState(false);
+  const mergedValueOptions = { ...DEFAULT_VALUE_OPTIONS, ...valueOptions };
 
   const activeCount = filterState.conditions.length;
 
@@ -219,7 +220,7 @@ export function TableFilterBuilder({ filterState, onChange }: TableFilterBuilder
           {filterState.conditions.map((cond) => {
             const fieldType = getFieldType(cond.field);
             const operators = OPERATORS_BY_TYPE[fieldType] ?? [];
-            const valueOpts = VALUE_OPTIONS[cond.field];
+            const valueOpts = mergedValueOptions[cond.field];
 
             return (
               <div key={cond.id} className="flex items-center gap-1.5">

@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import {
   ReactFlow,
   Controls,
@@ -20,6 +21,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useScope } from "@/contexts/scope-context";
 import type { ProjectInfo } from "@/lib/types";
+import { CodexLens } from "@/app/codex/page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,14 +142,13 @@ function AiGroupLabelNode({ data }: { data: { label: string; count: number } }) 
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const flowNodeTypes: NodeTypes = {
   rootNode: RootFlowNode,
   categoryNode: CategoryFlowNode,
   skillNode: SkillFlowNode,
   aiSkillNode: AiSkillFlowNode,
   aiGroupNode: AiGroupLabelNode,
-} as any;
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -377,7 +378,7 @@ function buildAiFlowElements(data: AiFlowData): { nodes: Node[]; edges: Edge[] }
 // ---------------------------------------------------------------------------
 
 export default function ClaudeMdPage() {
-  const { scope, projectPath: scopeProjectPath } = useScope();
+  const { runtime, scope, projectPath: scopeProjectPath } = useScope();
 
   // File list for multi-file mode
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
@@ -694,17 +695,27 @@ export default function ClaudeMdPage() {
   }
 
   // Custom heading components for ReactMarkdown (adds IDs for TOC scrolling)
-  const markdownHeadingComponents = useMemo(() => ({
-    h1: ({ node, children, ...props }: any) => (
+  const markdownHeadingComponents = useMemo<Components>(() => ({
+    h1: ({ children, ...props }) => (
       <h1 id={tocSlug(getNodeText(children))} {...props}>{children}</h1>
     ),
-    h2: ({ node, children, ...props }: any) => (
+    h2: ({ children, ...props }) => (
       <h2 id={tocSlug(getNodeText(children))} {...props}>{children}</h2>
     ),
-    h3: ({ node, children, ...props }: any) => (
+    h3: ({ children, ...props }) => (
       <h3 id={tocSlug(getNodeText(children))} {...props}>{children}</h3>
     ),
   }), []);
+
+  if (runtime === "codex") {
+    return (
+      <CodexLens
+        title="AGENTS.md"
+        subtitle="Codex 规则入口和 skill 事实源：全局 AGENTS.md、Codex skills、插件缓存和项目级配置"
+        variant="rules"
+      />
+    );
+  }
 
   // --- Loading state ---
   if (loading) {

@@ -18,6 +18,11 @@ const SOURCE_LABELS: Record<string, string> = {
   baoyu: "宝玉系列",
   "plugin-official": "官方插件",
   "plugin-community": "社区插件",
+  "codex-user": "Codex 自建",
+  "codex-system": "Codex 系统",
+  "codex-plugin": "Codex 插件",
+  "codex-agent-shared": "Agents 共享",
+  "codex-project": "Codex 项目",
 };
 
 const SOURCE_COLORS: Record<string, string> = {
@@ -25,6 +30,11 @@ const SOURCE_COLORS: Record<string, string> = {
   baoyu: "#8b5cf6",
   "plugin-official": "#3b82f6",
   "plugin-community": "#10b981",
+  "codex-user": "#6366f1",
+  "codex-system": "#10b981",
+  "codex-plugin": "#8b5cf6",
+  "codex-agent-shared": "#06b6d4",
+  "codex-project": "#f59e0b",
 };
 
 interface SkillGraph3DProps {

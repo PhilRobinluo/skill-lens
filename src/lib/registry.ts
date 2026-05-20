@@ -1,12 +1,12 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
 
+import { DATA_DIR } from "./config";
 import type { SkillsRegistry, SkillTags } from "./types";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const DATA_DIR = path.join(process.cwd(), "data");
 const REGISTRY_PATH = path.join(DATA_DIR, "skills-registry.json");
 
 function emptyRegistry(): SkillsRegistry {
@@ -101,4 +101,3 @@ export async function updateSkillNotes(
   await writeRegistry(registry);
   return registry;
 }
-

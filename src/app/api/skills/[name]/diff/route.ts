@@ -1,10 +1,7 @@
 import { promisify } from "node:util";
 import { execFile as execFileCb } from "node:child_process";
-import path from "node:path";
-import os from "node:os";
 import { NextResponse } from "next/server";
-import { ensureInitialized } from "@/lib/init-server";
-import { readRegistry } from "@/lib/registry";
+import { getSkillGitLocation, resolveSkillFromRequest } from "@/lib/skill-resolver";
 
 const execFile = promisify(execFileCb);
 
@@ -12,8 +9,6 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ name: string }> },
 ): Promise<NextResponse> {
-  await ensureInitialized();
-
   const url = new URL(request.url);
   const sha = url.searchParams.get("sha");
 
@@ -23,36 +18,29 @@ export async function GET(
 
   try {
     const { name } = await params;
-    const decodedName = decodeURIComponent(name);
-    const registry = await readRegistry();
-
-    const skill =
-      registry.skills[decodedName] ??
-      Object.values(registry.skills).find((entry) => entry.name === decodedName);
+    const skill = await resolveSkillFromRequest(request, name);
 
     if (!skill) {
       return NextResponse.json({ error: "Skill not found" }, { status: 404 });
     }
 
-    const claudeDir = path.join(os.homedir(), ".claude");
-    if (!skill.path.startsWith(claudeDir)) {
-      return NextResponse.json({ error: "Diff only available for skills under ~/.claude" }, { status: 400 });
+    const gitLocation = await getSkillGitLocation(skill.path);
+    if (!gitLocation) {
+      return NextResponse.json({ error: "Diff only available for skills inside a git repository" }, { status: 400 });
     }
-
-    const relativePath = path.relative(claudeDir, skill.path);
 
     // Get commit details
     const { stdout: showOutput } = await execFile(
       "git",
-      ["show", sha, "--format=%H%n%ai%n%an%n%B", "--stat", "--", `${relativePath}/`],
-      { cwd: claudeDir, maxBuffer: 2 * 1024 * 1024 },
+      ["show", sha, "--format=%H%n%ai%n%an%n%B", "--stat", "--", gitLocation.relativePath],
+      { cwd: gitLocation.gitRoot, maxBuffer: 2 * 1024 * 1024 },
     );
 
     // Get the diff
     const { stdout: diffOutput } = await execFile(
       "git",
-      ["show", sha, "--format=", "-p", "--", `${relativePath}/`],
-      { cwd: claudeDir, maxBuffer: 2 * 1024 * 1024 },
+      ["show", sha, "--format=", "-p", "--", gitLocation.relativePath],
+      { cwd: gitLocation.gitRoot, maxBuffer: 2 * 1024 * 1024 },
     );
 
     const showLines = showOutput.split("\n");

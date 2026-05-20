@@ -3,7 +3,13 @@ export type SkillSource =
   | "baoyu"
   | "plugin-official"
   | "plugin-community"
-  | "openclaw-remote";
+  | "codex-user"
+  | "codex-system"
+  | "codex-plugin"
+  | "codex-agent-shared"
+  | "codex-project";
+
+export type SkillRuntime = "claude" | "codex";
 
 export type Frequency = "daily" | "weekly" | "occasional" | "rare";
 
@@ -88,38 +94,14 @@ export interface FilterState {
 
 // ---------- Settings ----------
 
-export interface OpenClawSshConfig {
-  host: string;
-  port: number;
-  user: string;
-  keyPath: string;
-  skillsPath: string;
-  /** Optional: if OpenClaw runs as a different user, commands run via sudo -u */
-  runAsUser: string;
-  enabled: boolean;
-}
-
-/** A single OpenClaw instance (one "lobster") */
-export interface OpenClawInstance {
-  id: string;
-  nickname: string;
-  ssh: OpenClawSshConfig;
-}
-
 export interface AppSettings {
   openRouterApiKey: string;
   aiModel: string;
-  /** @deprecated Use openClawInstances instead. Kept for migration. */
-  openClawSsh?: OpenClawSshConfig;
-  /** Multiple OpenClaw instances */
-  openClawInstances?: OpenClawInstance[];
 }
 
 export interface SettingsStatus {
   hasApiKey: boolean;
   aiModel: string;
-  openClawSsh?: OpenClawSshConfig;
-  openClawInstances?: OpenClawInstance[];
 }
 
 // ---------- AI: Health Report ----------
@@ -247,17 +229,19 @@ export interface EvolutionStats {
 
 // ---------- Project Scope ----------
 
-export type ScopeType = "global" | "all" | "openclaw-remote" | `project:${string}` | `combined:${string}`;
+export type ScopeType = "global" | "all" | `project:${string}` | `combined:${string}`;
 
 export interface ProjectInfo {
   /** Display name (directory basename) */
   name: string;
   /** Absolute path to project root */
   path: string;
-  /** Number of skills in .claude/skills/ */
+  /** Number of runtime-specific project skills */
   skillCount: number;
   /** Whether the project has its own CLAUDE.md */
   hasClaudeMd: boolean;
+  /** Whether the project has its own AGENTS.md */
+  hasAgentsMd?: boolean;
   /** Whether the project has .claude/skills/ */
   hasSkills: boolean;
 }

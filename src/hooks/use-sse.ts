@@ -70,8 +70,8 @@ export function useAutoRefresh(refetch: () => void) {
       "type" in data
     ) {
       const eventType = (data as { type: string }).type;
-      // Refetch on any event except heartbeat (including "connected" to catch missed updates)
-      if (eventType !== "heartbeat") {
+      // The page's own load effect handles the initial fetch; SSE should only react to real changes.
+      if (eventType !== "heartbeat" && eventType !== "connected") {
         refetchRef.current();
       }
     }

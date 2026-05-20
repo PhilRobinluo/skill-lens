@@ -2,8 +2,10 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
+import { DATA_DIR } from "@/lib/config";
+
 // Store version notes alongside the registry data
-const NOTES_PATH = path.join(process.cwd(), "data", "claude-md-notes.json");
+const NOTES_PATH = path.join(DATA_DIR, "claude-md-notes.json");
 
 async function readNotes(): Promise<Record<string, string>> {
   try {

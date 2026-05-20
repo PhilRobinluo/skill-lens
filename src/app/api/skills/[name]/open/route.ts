@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { execFile } from "node:child_process";
 import path from "node:path";
-import { ensureInitialized } from "@/lib/init-server";
-import { readRegistry } from "@/lib/registry";
+import { resolveSkillFromRequest } from "@/lib/skill-resolver";
 
 function tryOpenInEditor(filePath: string): void {
   // Try cursor first, then VS Code, then default open
@@ -21,15 +20,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ name: string }> },
 ): Promise<NextResponse> {
-  await ensureInitialized();
-
   const { name } = await params;
-  const decodedName = decodeURIComponent(name);
-  const registry = await readRegistry();
-
-  const skill =
-    registry.skills[decodedName] ??
-    Object.values(registry.skills).find((entry) => entry.name === decodedName);
+  const skill = await resolveSkillFromRequest(request, name);
 
   if (!skill) {
     return NextResponse.json({ error: "Skill not found" }, { status: 404 });

@@ -6,16 +6,22 @@ import { useScope } from "@/contexts/scope-context";
 import type { ProjectInfo, ScopeType } from "@/lib/types";
 
 export function ScopeSelector() {
-  const { scope, setScope, scopeLabel } = useScope();
+  const { runtime, scope, setScope, scopeLabel } = useScope();
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/projects")
+    let cancelled = false;
+    fetch(`/api/projects?runtime=${runtime}`)
       .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.projects) setProjects(data.projects); })
+      .then(data => {
+        if (!cancelled && data?.projects) setProjects(data.projects);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [runtime]);
 
   function selectScope(s: ScopeType) {
     setScope(s);
@@ -24,22 +30,11 @@ export function ScopeSelector() {
 
   // Derive state
   const isGlobal = scope === "global";
-  const isAll = scope === "all";
   const isProject = scope.startsWith("project:");
-  const isCombined = scope.startsWith("combined:");
-  const currentProjectPath = (isProject || isCombined)
+  const currentProjectPath = isProject
     ? scope.split(":").slice(1).join(":")
     : null;
-
-  // "包含全局" checkbox logic: toggle between project:<path> and combined:<path>
-  function toggleIncludeGlobal() {
-    if (!currentProjectPath) return;
-    if (isCombined) {
-      setScope(`project:${currentProjectPath}`);
-    } else {
-      setScope(`combined:${currentProjectPath}`);
-    }
-  }
+  const ruleFileName = runtime === "codex" ? "AGENTS.md" : "CLAUDE.md";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -49,12 +44,9 @@ export function ScopeSelector() {
           className="group flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-accent"
           aria-label="切换视角"
         >
-          {/* Show scope label when not global */}
-          {!isGlobal && (
-            <span className="max-w-[120px] truncate text-[10px] font-medium text-primary/80">
-              {scopeLabel}
-            </span>
-          )}
+          <span className="max-w-[120px] truncate text-[10px] font-medium text-primary/80">
+            {isGlobal ? "全局视图" : scopeLabel}
+          </span>
           {/* Subtle chevron */}
           <svg
             className={`h-3 w-3 text-muted-foreground/40 transition-all group-hover:text-muted-foreground ${open ? "rotate-90" : ""}`}
@@ -73,28 +65,18 @@ export function ScopeSelector() {
         sideOffset={8}
         className="w-[260px] border bg-background/90 p-0 shadow-xl backdrop-blur-xl"
       >
-        {/* ── Section: 视角 ── */}
+        {/* ── Section: Scope ── */}
         <div className="p-2">
           <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
             视角
           </p>
 
-          {/* 全局 */}
           <ScopeOption
             active={isGlobal}
             onClick={() => selectScope("global")}
             icon="G"
-            label="全局"
-            description="全局 Skill + 全局 CLAUDE.md"
-          />
-
-          {/* 全部项目 */}
-          <ScopeOption
-            active={isAll}
-            onClick={() => selectScope("all")}
-            icon="*"
-            label="全部项目"
-            description="所有项目 + 全局，全景鸟瞰"
+            label="全局 Skill"
+            description={`只看全局 Skill + 全局 ${ruleFileName}`}
           />
         </div>
 
@@ -104,7 +86,7 @@ export function ScopeSelector() {
             <div className="border-t" />
             <div className="p-2">
               <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-                项目
+                项目 Skill
               </p>
               <div className="max-h-[240px] space-y-0.5 overflow-y-auto">
                 {projects.map((project) => {
@@ -127,11 +109,11 @@ export function ScopeSelector() {
                             {project.skillCount}
                           </span>
                         )}
-                        {project.hasClaudeMd && (
-                          <span className="rounded bg-blue-100 px-1 py-0.5 text-[9px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                            MD
-                          </span>
-                        )}
+                      {(runtime === "codex" ? project.hasAgentsMd : project.hasClaudeMd) && (
+                        <span className="rounded bg-blue-100 px-1 py-0.5 text-[9px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                            {runtime === "codex" ? "AG" : "MD"}
+                        </span>
+                      )}
                       </span>
                     </button>
                   );
@@ -141,22 +123,10 @@ export function ScopeSelector() {
           </>
         )}
 
-        {/* ── Checkbox: 包含全局 (only when a specific project is selected) ── */}
-        {(isProject || isCombined) && (
-          <>
-            <div className="border-t" />
-            <div className="p-2">
-              <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
-                <input
-                  type="checkbox"
-                  checked={isCombined}
-                  onChange={toggleIncludeGlobal}
-                  className="h-3.5 w-3.5 cursor-pointer rounded border-muted-foreground/30 accent-primary"
-                />
-                <span className="text-muted-foreground">包含全局 Skill</span>
-              </label>
-            </div>
-          </>
+        {isProject && (
+          <div className="border-t px-4 py-2 text-[10px] leading-4 text-muted-foreground/70">
+            项目视图只看当前项目，不自动混入全局 Skill。
+          </div>
         )}
       </PopoverContent>
     </Popover>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SkillCard } from "@/components/skill-card";
 import { SkillDetailSheet } from "@/components/skill-detail-sheet";
 import { SkillsTable } from "@/components/skills-table/skills-table";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -31,14 +30,14 @@ const SkillGraph3D = dynamic(
   },
 );
 
-type ViewMode = "table" | "card" | "grouped" | "graph";
+type ViewMode = "table" | "grouped" | "graph";
 
 const LS_VIEW_MODE = "skills-view-mode";
 
 /** Map legacy localStorage value to new ViewMode */
 function resolveViewMode(raw: string | null): ViewMode {
-  if (raw === "list") return "card";
-  if (raw === "table" || raw === "card" || raw === "grouped" || raw === "graph") return raw;
+  if (raw === "list" || raw === "card") return "table";
+  if (raw === "table" || raw === "grouped" || raw === "graph") return raw;
   return "table";
 }
 
@@ -50,10 +49,25 @@ const SOURCE_OPTIONS = [
   { value: "plugin-community", label: "社区插件" },
 ];
 
+const CODEX_SOURCE_OPTIONS = [
+  { value: "all", label: "全部来源" },
+  { value: "codex-user", label: "Codex 自建" },
+  { value: "codex-system", label: "Codex 系统" },
+  { value: "codex-plugin", label: "Codex 插件" },
+  { value: "codex-agent-shared", label: "Agents 共享" },
+  { value: "codex-project", label: "Codex 项目" },
+];
+
 const CLAUDE_STATUS_OPTIONS = [
   { value: "all", label: "全部状态" },
   { value: "routed", label: "已路由" },
   { value: "orphan", label: "孤立" },
+];
+
+const CODEX_STATUS_OPTIONS = [
+  { value: "all", label: "全部状态" },
+  { value: "routed", label: "规则可见" },
+  { value: "orphan", label: "待梳理" },
 ];
 
 export default function SkillsPage() {
@@ -80,6 +94,26 @@ const SOURCE_BADGE_STYLES: Record<string, { label: string; className: string }> 
   "plugin-community": {
     label: "社区插件",
     className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
+  },
+  "codex-user": {
+    label: "Codex 自建",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+  },
+  "codex-system": {
+    label: "Codex 系统",
+    className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  },
+  "codex-plugin": {
+    label: "Codex 插件",
+    className: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
+  },
+  "codex-agent-shared": {
+    label: "Agents 共享",
+    className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
+  },
+  "codex-project": {
+    label: "Codex 项目",
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   },
 };
 
@@ -116,7 +150,6 @@ function groupSkillsByDomain(skills: SkillEntry[]): SkillGroup[] {
 
 const VIEW_MODES: { mode: ViewMode; label: string }[] = [
   { mode: "table", label: "多维表格" },
-  { mode: "card", label: "卡片" },
   { mode: "grouped", label: "分组" },
   { mode: "graph", label: "图谱" },
 ];
@@ -124,7 +157,8 @@ const VIEW_MODES: { mode: ViewMode; label: string }[] = [
 function SkillsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { scopeParam } = useScope();
+  const { runtime, scopeParam } = useScope();
+  const mountedRef = useRef(false);
 
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [allSkillNames, setAllSkillNames] = useState<string[]>([]);
@@ -132,10 +166,7 @@ function SkillsPageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [callStatsMap, setCallStatsMap] = useState<Record<string, SkillCallStats>>({});
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window === "undefined") return "table";
-    return resolveViewMode(localStorage.getItem(LS_VIEW_MODE));
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   // Filters from URL
   const q = searchParams.get("q") ?? "";
@@ -152,6 +183,19 @@ function SkillsPageInner() {
     for (const s of skills) for (const d of s.tags.domain) set.add(d);
     return Array.from(set).sort();
   }, [skills]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const timer = window.setTimeout(() => {
+      if (mountedRef.current) {
+        setViewMode(resolveViewMode(localStorage.getItem(LS_VIEW_MODE)));
+      }
+    }, 0);
+    return () => {
+      mountedRef.current = false;
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   // Update URL params
   function updateParam(key: string, value: string) {
@@ -174,6 +218,7 @@ function SkillsPageInner() {
       const res = await fetch(`/api/skills?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (!mountedRef.current) return;
 
       let filtered: SkillEntry[] = data.skills;
 
@@ -191,9 +236,10 @@ function SkillsPageInner() {
       );
       setError(null);
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(String(err));
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [q, source, claudeStatus, scopeParam]);
 
@@ -202,10 +248,16 @@ function SkillsPageInner() {
   }, [fetchSkills]);
 
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/skills/frequency")
       .then((res) => res.ok ? res.json() : {})
-      .then((data: Record<string, SkillCallStats>) => setCallStatsMap(data))
+      .then((data: Record<string, SkillCallStats>) => {
+        if (!cancelled) setCallStatsMap(data);
+      })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useAutoRefresh(fetchSkills);
@@ -230,7 +282,7 @@ function SkillsPageInner() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">浏览</h1>
           <p className="text-sm text-muted-foreground">
-            {loading ? "加载中..." : `${total} 个技能 — 多视图浏览、搜索、筛选，点击查看详情`}
+            {loading ? "加载中..." : `${runtime === "codex" ? "Codex" : "Claude"} 模式 · ${total} 个技能 — 多视图浏览、搜索、筛选，点击查看详情`}
           </p>
         </div>
 
@@ -259,8 +311,8 @@ function SkillsPageInner() {
           })}
         </div>
 
-        {/* Filters — only for card/grouped views (table has its own toolbar) */}
-        {(viewMode === "card" || viewMode === "grouped") && (
+        {/* Filters — only for grouped view (table has its own toolbar) */}
+        {viewMode === "grouped" && (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Input
             placeholder="搜索技能..."
@@ -277,7 +329,7 @@ function SkillsPageInner() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SOURCE_OPTIONS.map((opt) => (
+              {(runtime === "codex" ? CODEX_SOURCE_OPTIONS : SOURCE_OPTIONS).map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -293,7 +345,7 @@ function SkillsPageInner() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {CLAUDE_STATUS_OPTIONS.map((opt) => (
+              {(runtime === "codex" ? CODEX_STATUS_OPTIONS : CLAUDE_STATUS_OPTIONS).map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -331,7 +383,7 @@ function SkillsPageInner() {
         </div>
       )}
 
-      {/* Table / Card / Grouped — constrained width with padding */}
+      {/* Table / Grouped — constrained width with padding */}
       {!isGraphView && (
         <div className="mx-auto w-full max-w-7xl flex-1 overflow-y-auto space-y-6 px-6 pb-6 pt-2">
           {viewMode === "table" && (
@@ -341,19 +393,8 @@ function SkillsPageInner() {
               onNameClick={handleCardClick}
               onUpdated={handleSheetUpdated}
               callStatsMap={callStatsMap}
+              readOnly={runtime === "codex"}
             />
-          )}
-
-          {viewMode === "card" && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {skills.map((skill, index) => (
-                <SkillCard
-                  key={`${skill.name}-${skill.source}-${index}`}
-                  skill={skill}
-                  onClick={() => handleCardClick(skill)}
-                />
-              ))}
-            </div>
           )}
 
           {viewMode === "grouped" && (
@@ -390,6 +431,7 @@ function SkillsPageInner() {
         onOpenChange={setSheetOpen}
         onUpdated={handleSheetUpdated}
         onToggle={async (skill, enabled) => {
+          if (runtime === "codex") return;
           await fetch(`/api/skills/${encodeURIComponent(skill.name)}/toggle`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },

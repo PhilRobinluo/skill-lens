@@ -21,7 +21,7 @@ let serverProcess = null;
 function startServer() {
   if (isDev) return Promise.resolve(); // 开发模式由 concurrently 启动
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // 打包后用 node 直接运行 next，避免 .bin 软链接问题
     const nextEntry = path.join(ROOT_DIR, "node_modules", "next", "dist", "bin", "next");
     serverProcess = spawn(process.execPath, [nextEntry, "start", "-p", String(PORT)], {

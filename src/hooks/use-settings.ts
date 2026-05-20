@@ -18,7 +18,12 @@ export function useSettings() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    const timer = window.setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [refresh]);
 
   return { status, refresh };
