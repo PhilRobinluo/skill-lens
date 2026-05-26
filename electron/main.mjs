@@ -14,6 +14,7 @@ const BASE_URL = `http://localhost:${PORT}`;
 const MENU_BAR_ONLY = process.env.SKILL_LENS_DOCK !== "1";
 const SHOW_TRAY_ON_LAUNCH = process.env.SKILL_LENS_SHOW_TRAY_ON_LAUNCH === "1";
 const LOG_PATH = path.join(app.getPath("userData"), "startup.log");
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
 let tray = null;
 let trayWindow = null;
@@ -289,45 +290,57 @@ ipcMain.handle("set-tray-expanded", (_event, expanded) => {
 });
 
 // ---------- 启动 ----------
-app.whenReady().then(async () => {
-  if (MENU_BAR_ONLY && process.platform === "darwin") app.setActivationPolicy("accessory");
-  if (MENU_BAR_ONLY && app.dock) app.dock.hide();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      createMainWindow();
+    } else {
+      showTrayWindow();
+    }
+  });
 
-  // 设置 Dock 图标
-  const dockIcon = nativeImage.createFromPath(
-    path.join(ROOT_DIR, "public", "logo-v6-dock.png")
-  );
-  if (app.dock && !MENU_BAR_ONLY) app.dock.setIcon(dockIcon);
+  app.whenReady().then(async () => {
+    if (MENU_BAR_ONLY && process.platform === "darwin") app.setActivationPolicy("accessory");
+    if (MENU_BAR_ONLY && app.dock) app.dock.hide();
 
-  // 打包模式下先启动内置服务器
-  await startServer();
+    // 设置 Dock 图标
+    const dockIcon = nativeImage.createFromPath(
+      path.join(ROOT_DIR, "public", "logo-v6-dock.png")
+    );
+    if (app.dock && !MENU_BAR_ONLY) app.dock.setIcon(dockIcon);
 
-  // 菜单栏图标
-  try {
-    createTray();
-    createTrayWindow();
-    if (SHOW_TRAY_ON_LAUNCH) showTrayWindow();
-  } catch (e) {
-    console.error("Tray creation failed:", e);
-  }
+    // 打包模式下先启动内置服务器
+    await startServer();
 
-  // 自动更新
-  setupAutoUpdater();
-});
+    // 菜单栏图标
+    try {
+      createTray();
+      createTrayWindow();
+      if (SHOW_TRAY_ON_LAUNCH) showTrayWindow();
+    } catch (e) {
+      console.error("Tray creation failed:", e);
+    }
 
-app.on("window-all-closed", () => {
-  // macOS 上关闭窗口不退出 app
-});
+    // 自动更新
+    setupAutoUpdater();
+  });
 
-app.on("activate", () => {
-  if (mainWindow) {
-    createMainWindow();
-  } else {
-    showTrayWindow();
-  }
-});
+  app.on("window-all-closed", () => {
+    // macOS 上关闭窗口不退出 app
+  });
 
-app.on("before-quit", () => {
-  // 退出时关闭内置服务器
-  if (serverProcess) serverProcess.kill();
-});
+  app.on("activate", () => {
+    if (mainWindow) {
+      createMainWindow();
+    } else {
+      showTrayWindow();
+    }
+  });
+
+  app.on("before-quit", () => {
+    // 退出时关闭内置服务器
+    if (serverProcess) serverProcess.kill();
+  });
+}
